@@ -7,14 +7,17 @@
     "dev": "astro dev",
     "build": "node scripts/thumbs.mjs && astro build",
     "thumbs": "node scripts/thumbs.mjs",
-    "preview": "astro preview",
+    "preview": "npm run build && wrangler dev",
     "check": "astro check",
     "backup": "node scripts/backup-wp.mjs",
     "migrate": "node scripts/migrate.mjs",
     "images": "node scripts/download-images.mjs",
-    "verify": "node scripts/verify.mjs"
+    "verify": "node scripts/verify.mjs",
+    "generate-types": "wrangler types",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.1.4",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
     "@fontsource-variable/ibm-plex-sans": "^5.3.0",
@@ -26,6 +29,7 @@
     "jsdom": "^26.1.0",
     "sharp": "^0.35.3",
     "turndown": "^7.2.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "wrangler": "^4.114.0"
   }
 }

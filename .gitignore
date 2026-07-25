@@ -23,3 +23,9 @@ Thumbs.db
 # Riêng _backup/raw-json/ VẪN được commit để làm bản lưu nội dung.
 _backup/uploads/
 _backup/original-images/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
