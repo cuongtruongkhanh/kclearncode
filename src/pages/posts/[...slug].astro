@@ -1,0 +1,32 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import { getCollection, render } from 'astro:content';
+import PostLayout from '../../layouts/PostLayout.astro';
+
+// `satisfies` thay vì annotation trực tiếp: giữ được kiểu thật của props để
+// InferGetStaticPropsType suy ra được, nếu không Astro.props sẽ là `unknown`.
+export const getStaticPaths = (async () => {
+  const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+  );
+
+  // posts[0] là bài mới nhất → "bài sau" nằm ở index nhỏ hơn, "bài trước" ở index lớn hơn
+  return posts.map((post, i) => ({
+    params: { slug: post.id },
+    props: {
+      post,
+      next: posts[i - 1] ? { slug: posts[i - 1]!.id, title: posts[i - 1]!.data.title } : undefined,
+      prev: posts[i + 1] ? { slug: posts[i + 1]!.id, title: posts[i + 1]!.data.title } : undefined,
+    },
+  }));
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { post, prev, next } = Astro.props as Props;
+const { Content } = await render(post);
+---
+
+<PostLayout {...post.data} prev={prev} next={next}>
+  <Content />
+</PostLayout>

@@ -1,0 +1,204 @@
+# KcLearnCode
+
+Blog cá nhân, chạy bằng [Astro](https://astro.build). Toàn bộ 30 bài viết đã chuyển từ
+WordPress (`kclearncode.com`) sang đây. Hosting miễn phí trên Cloudflare Pages — **chi phí 0đ**.
+
+---
+
+## Viết bài mới
+
+Chỉ 5 bước, không cần vào trang admin nào:
+
+**1. Tạo file** trong `src/content/posts/`, đặt tên `YYYY-MM-ten-bai.md`:
+
+```
+src/content/posts/2026-07-cach-viet-test-tot-hon.md
+```
+
+> Tiền tố `YYYY-MM-` chỉ để sắp xếp file cho dễ nhìn trong VS Code. URL sẽ **không**
+> có nó — bài trên là `/posts/cach-viet-test-tot-hon`.
+
+**2. Copy phần frontmatter này vào đầu file** rồi sửa:
+
+```yaml
+---
+title: "Tiêu đề bài viết"
+description: "Mô tả 1–2 câu, hiện trên Google và khi share Facebook. Nên dài 120–160 ký tự."
+pubDate: 2026-07-25
+categories: ["Learning"]
+tags: ["playwright", "automation"]
+heroImage: "/images/posts/cach-viet-test-tot-hon/hero.jpg"
+draft: false
+---
+```
+
+| Trường | Bắt buộc | Ghi chú |
+|---|---|---|
+| `title` | ✅ | Có emoji, dấu tiếng Việt đều được |
+| `description` | ✅ | Tối thiểu 10 ký tự |
+| `pubDate` | ✅ | Dạng `YYYY-MM-DD` |
+| `categories` | | Nên dùng lại tên có sẵn: `Blog`, `Learning`, `Java`, `C#`, `Selenium`, `playwright`, `Eclipse`, `About Me` |
+| `tags` | | Tự do |
+| `heroImage` | | Ảnh đại diện, hiện đầu bài và khi share |
+| `draft` | | `true` = chưa đăng, không xuất hiện trên site |
+
+**3. Ảnh**: bỏ vào `public/images/posts/<ten-bai>/`, rồi dùng đường dẫn tuyệt đối:
+
+```markdown
+![Mô tả ảnh](/images/posts/cach-viet-test-tot-hon/so-do.png)
+*Chú thích ảnh in nghiêng ngay dưới sẽ được canh giữa*
+```
+
+**4. Xem trước**:
+
+```powershell
+npm run dev
+```
+
+Mở http://localhost:4321 — sửa file là trang tự cập nhật ngay.
+
+**5. Đăng bài**:
+
+```powershell
+git add .
+git commit -m "post: cach viet test tot hon"
+git push
+```
+
+Cloudflare Pages tự build và deploy, khoảng 30 giây sau là bài lên site.
+
+### Code block
+
+Nhớ ghi tên ngôn ngữ sau dấu ``` để có màu:
+
+````markdown
+```javascript
+await page.getByRole('button', { name: 'Đăng nhập' }).click();
+```
+````
+
+Ngôn ngữ dùng được: `javascript`, `typescript`, `python`, `java`, `csharp`, `powershell`,
+`bash`, `json`, `xml`, `html`, `css`, `sql`, `yaml`… (Shiki hỗ trợ hàng trăm loại).
+
+---
+
+## Các lệnh
+
+| Lệnh | Việc |
+|---|---|
+| `npm run dev` | Chạy server xem trước ở http://localhost:4321 |
+| `npm run build` | Build ra thư mục `dist/` |
+| `npm run preview` | Xem thử bản đã build (giống production nhất) |
+| `npm run check` | Kiểm tra lỗi TypeScript và frontmatter sai kiểu |
+| `npm run verify` | 43 phép kiểm tra tự động (chạy **sau** `npm run build`) |
+| `npm run backup` | Tải lại dữ liệu thô từ WordPress cũ (chỉ dùng khi site cũ còn sống) |
+| `npm run migrate` | Dựng lại toàn bộ `.md` từ `_backup/raw-json/` — **ghi đè hết bài đã sửa tay** |
+| `npm run images` | Tải ảnh còn thiếu về local, chạy lại được nhiều lần |
+
+> ⚠️ `npm run migrate` **xoá sạch `src/content/posts/` rồi tạo lại**. Sau khi đã bắt đầu
+> viết bài mới hoặc sửa tay bài cũ thì **đừng chạy lệnh này nữa**.
+
+---
+
+## Cấu trúc
+
+```
+src/
+  content/posts/       30 bài viết dạng Markdown
+  content.config.ts    Schema frontmatter (sai kiểu là build fail ngay)
+  consts.ts            Tên site, menu, hàm slug hoá & format ngày
+  layouts/             BaseLayout (SEO, theme), PostLayout (bài viết)
+  components/          Header, Footer, PostCard, ThemeToggle
+  pages/               Các route: /, /blog, /posts/…, /categories/…, /rss.xml, /404
+  styles/global.css    Toàn bộ CSS (dark/light bằng CSS variables)
+public/
+  images/posts/        66 ảnh đã tải về từ WordPress
+  games/               2 web app tương tác tách riêng (xem mục dưới)
+scripts/               Script migrate & kiểm tra
+_backup/raw-json/      Dữ liệu gốc từ WordPress REST API — bản lưu, đừng xoá
+```
+
+---
+
+## Hai điểm đặc biệt cần biết
+
+### 1. Hai bài game nằm trong iframe
+
+`guess-my-number` và `the-pig-game` không phải bài viết thường — chúng là web app JS
+có CSS reset toàn cục (`* { margin: 0 }`, `html { font-size: 62.5% }`, `body { background: #222 }`).
+Nhúng thẳng vào bài sẽ phá layout blog, nên mỗi game là một trang HTML độc lập trong
+`public/games/` và được nhúng lại bằng `<iframe>`.
+
+Iframe tự báo chiều cao thật ra trang cha qua `postMessage`, xử lý ở `src/layouts/PostLayout.astro`.
+Muốn sửa game thì sửa trực tiếp file trong `public/games/`.
+
+### 2. Năm ảnh đã mất vĩnh viễn
+
+Bài `python-tu-khong-den-co` có 5 ảnh minh hoạ host ở `cuccode.com`. Trang đó đã xoá ảnh
+(HTTP 404) và Wayback Machine cũng không có bản lưu — **mất từ trước khi migrate**, không phải
+do chuyển nhà. Chỗ đó hiện là ghi chú:
+
+> 🖼 *Python purpose — ảnh gốc host tại `cuccode.com` đã bị xoá, không có bản lưu.*
+
+URL gốc vẫn lưu trong HTML comment ngay dưới. Nếu tìm được ảnh thay thế, chỉ cần đổi
+ghi chú đó thành `![alt](/images/posts/python-tu-khong-den-co/anh-moi.png)`.
+
+---
+
+## Deploy lên Cloudflare Pages
+
+Làm một lần duy nhất:
+
+**1. Đẩy code lên GitHub**
+
+```powershell
+git init
+git add .
+git commit -m "Chuyen blog tu WordPress sang Astro"
+git branch -M main
+git remote add origin https://github.com/<tai-khoan>/kclearncode.git
+git push -u origin main
+```
+
+**2. Tạo project trên Cloudflare**
+
+1. Vào https://dash.cloudflare.com → **Workers & Pages** → **Create** → **Pages** →
+   **Connect to Git**
+2. Chọn repo vừa đẩy lên
+3. Điền cấu hình build:
+   - Framework preset: **Astro**
+   - Build command: `npm run build`
+   - Build output directory: `dist`
+4. Project name: `kclearncode` → site sẽ ở `https://kclearncode.pages.dev`
+5. Bấm **Save and Deploy**
+
+HTTPS bật tự động, không cần cấu hình gì thêm. Từ giờ mỗi lần `git push` lên `main` là
+site tự build lại; mỗi Pull Request có URL xem trước riêng.
+
+**3. Nếu sau này đổi tên miền**
+
+Sửa `site` trong [astro.config.mjs](astro.config.mjs) — giá trị này dùng để sinh
+canonical URL, sitemap và RSS, để sai là SEO sai.
+
+**4. Đăng ký Google Search Console**
+
+Vì đã bỏ tên miền `kclearncode.com`, Google phải index lại từ đầu:
+
+1. Vào https://search.google.com/search-console → thêm property `kclearncode.pages.dev`
+2. Submit sitemap: `https://kclearncode.pages.dev/sitemap-index.xml`
+
+Nhớ cập nhật link blog ở profile GitHub, LinkedIn, Facebook, chữ ký email.
+
+---
+
+## Nếu WordPress cũ vẫn còn sống
+
+Nên làm nốt hai việc này trước khi hosting hết hạn:
+
+1. **Xuất file WXR đầy đủ**: `wp-admin` → **Tools** → **Export** → **All content** →
+   lưu file `.xml` vào `_backup/`. File này có cả bài nháp/riêng tư mà REST API không trả về.
+2. **Chèn thông báo chuyển nhà** trên trang chủ WordPress, dẫn sang địa chỉ mới, để người
+   đọc quen biết đi theo.
+
+Không có comment nào cần chuyển: toàn bộ ~100 comment trên site cũ là spam
+(quảng cáo, bán sim, link rác).

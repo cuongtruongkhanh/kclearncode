@@ -1,0 +1,33 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { categorySlug } from '../../consts';
+
+const posts = await getCollection('posts', ({ data }) => !data.draft);
+
+const counts = new Map<string, number>();
+for (const post of posts) {
+  for (const cat of post.data.categories) counts.set(cat, (counts.get(cat) ?? 0) + 1);
+}
+const categories = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'vi'));
+---
+
+<BaseLayout title="Chủ đề" description="Các chủ đề bài viết trên KcLearnCode.">
+  <div class="page-intro">
+    <h1>Chủ đề</h1>
+    <p>{categories.length} chủ đề trên {posts.length} bài viết.</p>
+  </div>
+
+  <ul class="category-grid">
+    {
+      categories.map(([name, count]) => (
+        <li>
+          <a class="category-card" href={`/categories/${categorySlug(name)}`}>
+            <span>{name}</span>
+            <span class="category-card__count">{count} bài</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</BaseLayout>

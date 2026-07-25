@@ -1,0 +1,31 @@
+---
+import { categorySlug, formatDate } from '../consts';
+
+interface Props {
+  slug: string;
+  title: string;
+  description: string;
+  pubDate: Date;
+  categories: string[];
+}
+
+const { slug, title, description, pubDate, categories } = Astro.props;
+---
+
+<li class="post-card">
+  <div class="post-card__meta">
+    <time datetime={pubDate.toISOString().slice(0, 10)}>{formatDate(pubDate)}</time>
+    {
+      categories.length > 0 && (
+        <>
+          <span aria-hidden="true">·</span>
+          {categories.map((cat) => (
+            <a href={`/categories/${categorySlug(cat)}`}>{cat}</a>
+          ))}
+        </>
+      )
+    }
+  </div>
+  <h2 class="post-card__title"><a href={`/posts/${slug}`}>{title}</a></h2>
+  <p class="post-card__desc">{description}</p>
+</li>

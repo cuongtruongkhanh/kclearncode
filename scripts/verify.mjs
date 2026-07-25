@@ -1,0 +1,266 @@
+/**
+ * Kiểm tra kết quả migrate một cách tự động. Chạy SAU `npm run build`:
+ *   npm run build && npm run verify
+ *
+ * Mỗi phép kiểm tra đối chiếu dist/ với dữ liệu gốc trong _backup/raw-json/,
+ * nên nếu migrate làm mất bài, mất ảnh hay sót HTML thô thì sẽ fail ở đây.
+ */
+import { readFile, readdir, stat } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { join, relative } from 'node:path';
+
+const ROOT = process.cwd();
+const DIST = join(ROOT, 'dist');
+const POSTS = join(ROOT, 'src', 'content', 'posts');
+const RAW = join(ROOT, '_backup', 'raw-json');
+
+let failed = 0;
+let passed = 0;
+
+function check(name, condition, detail = '') {
+  if (condition) {
+    passed++;
+    console.log(`  ✓ ${name}`);
+  } else {
+    failed++;
+    console.log(`  ✗ ${name}${detail ? `\n      ${detail}` : ''}`);
+  }
+}
+
+/** Liệt kê đệ quy mọi file trong một thư mục. */
+async function walk(dir) {
+  const out = [];
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...(await walk(full)));
+    else out.push(full);
+  }
+  return out;
+}
+
+if (!existsSync(DIST)) {
+  console.error('Chưa có thư mục dist/. Chạy `npm run build` trước.');
+  process.exit(1);
+}
+
+const wpPosts = JSON.parse(await readFile(join(RAW, 'posts.json'), 'utf8'));
+const mdFiles = (await readdir(POSTS)).filter((f) => f.endsWith('.md'));
+const mdSources = new Map();
+for (const f of mdFiles) mdSources.set(f, await readFile(join(POSTS, f), 'utf8'));
+const distFiles = await walk(DIST);
+const htmlFiles = distFiles.filter((f) => f.endsWith('.html'));
+
+// ------------------------------------------------------- 1. Đủ số bài
+console.log('\n[1] Số lượng bài viết');
+check(
+  `Số file .md khớp số bài trên WordPress (${wpPosts.length})`,
+  mdFiles.length === wpPosts.length,
+  `có ${mdFiles.length} file .md, WordPress có ${wpPosts.length} bài`,
+);
+
+const postPages = htmlFiles.filter((f) => f.includes(`${join('dist', 'posts')}`) || /dist[\\/]posts[\\/]/.test(f));
+check(
+  `Số trang bài đã build khớp (${wpPosts.length})`,
+  postPages.length === wpPosts.length,
+  `build ra ${postPages.length} trang trong dist/posts/`,
+);
+
+// Không bài nào bị mất: mọi wpId phải xuất hiện đúng 1 lần
+const wpIds = new Set(wpPosts.map((p) => p.id));
+const mdIds = new Set();
+for (const [, src] of mdSources) {
+  const m = src.match(/^wpId:\s*(\d+)/m);
+  if (m) mdIds.add(Number(m[1]));
+}
+const missing = [...wpIds].filter((id) => !mdIds.has(id));
+check('Không bài nào bị bỏ sót (đối chiếu theo wpId)', missing.length === 0, `thiếu wpId: ${missing.join(', ')}`);
+
+// ------------------------------------------------------- 2. Không sót rác WordPress
+console.log('\n[2] Không còn dấu vết WordPress trong nội dung');
+
+const banned = [
+  ['class WordPress (wp-block-)', /wp-block-/],
+  ['đường dẫn wp-content', /kclearncode\.com\/wp-content/],
+  ['thẻ span có style inline', /<span style=/],
+  ['thẻ div thô', /<div[\s>]/],
+  ['shortcode WordPress', /\[caption|\[gallery|\[embed/],
+];
+for (const [label, re] of banned) {
+  const hits = [...mdSources].filter(([, src]) => re.test(src)).map(([f]) => f);
+  check(`Không còn ${label}`, hits.length === 0, hits.join(', '));
+}
+
+// Ảnh: không còn URL trỏ ra internet, TRỪ trong HTML comment ghi chú ảnh đã chết
+const externalImages = [];
+for (const [f, src] of mdSources) {
+  const withoutComments = src.replace(/<!--[\s\S]*?-->/g, '');
+  for (const m of withoutComments.matchAll(/!\[[^\]]*\]\((https?:\/\/[^)]+)\)/g)) {
+    externalImages.push(`${f} → ${m[1]}`);
+  }
+  const hero = withoutComments.match(/^heroImage:\s*"(https?:\/\/[^"]+)"/m);
+  if (hero) externalImages.push(`${f} → hero ${hero[1]}`);
+}
+check(
+  'Mọi ảnh đều trỏ về local (không phụ thuộc hosting cũ)',
+  externalImages.length === 0,
+  externalImages.join('\n      '),
+);
+
+// ------------------------------------------------------- 3. Ảnh tồn tại thật
+console.log('\n[3] Ảnh có thật trên đĩa');
+
+const referenced = new Set();
+for (const [, src] of mdSources) {
+  for (const m of src.matchAll(/!\[[^\]]*\]\((\/images\/[^)\s]+)\)/g)) referenced.add(m[1]);
+  const hero = src.match(/^heroImage:\s*"(\/images\/[^"]+)"/m);
+  if (hero) referenced.add(hero[1]);
+}
+for (const file of await readdir(join(ROOT, 'public', 'games')).catch(() => [])) {
+  const src = await readFile(join(ROOT, 'public', 'games', file), 'utf8');
+  for (const m of src.matchAll(/src="(\/images\/[^"]+)"/g)) referenced.add(m[1]);
+}
+
+const brokenImages = [];
+for (const path of referenced) {
+  const onDisk = join(ROOT, 'public', path.replace(/^\//, ''));
+  const inDist = join(DIST, path.replace(/^\//, ''));
+  if (!existsSync(onDisk) || !existsSync(inDist)) brokenImages.push(path);
+}
+check(
+  `Cả ${referenced.size} ảnh được tham chiếu đều tồn tại trong public/ và dist/`,
+  brokenImages.length === 0,
+  brokenImages.join('\n      '),
+);
+
+// Mọi bài đều có ảnh đại diện (WordPress có đủ 30 featured image)
+const noHero = [...mdSources].filter(([, src]) => !/^heroImage:/m.test(src)).map(([f]) => f);
+check('Mọi bài đều có heroImage', noHero.length === 0, noHero.join(', '));
+
+// ------------------------------------------------------- 4. Code block
+console.log('\n[4] Code block');
+
+const totalFences = [...mdSources].reduce((n, [, src]) => n + (src.match(/^```/gm) ?? []).length, 0);
+check('Số dấu ``` là số chẵn (không có fence hở)', totalFences % 2 === 0, `đếm được ${totalFences}`);
+
+// Số code block trên WordPress phải bằng số fence trong markdown
+const wpCodeBlocks = wpPosts.reduce((n, p) => {
+  const c = p.content.rendered;
+  return n + (c.match(/<pre[\s>]/g) ?? []).length;
+}, 0);
+const mdCodeBlocks = totalFences / 2;
+check(
+  `Số code block khớp WordPress (WP: ${wpCodeBlocks} thẻ <pre>, markdown: ${mdCodeBlocks} block)`,
+  mdCodeBlocks >= wpCodeBlocks,
+  'markdown ít code block hơn WordPress → có thể đã mất code',
+);
+
+// Không còn span màu của Shiki lọt vào trong code block
+const shikiLeak = [...mdSources].filter(([, src]) => /```[\s\S]*?<span style="color/.test(src)).map(([f]) => f);
+check('Không còn <span> màu của Shiki lọt vào code block', shikiLeak.length === 0, shikiLeak.join(', '));
+
+// Code block trong HTML đã build phải được highlight (có class astro-code)
+let highlighted = 0;
+for (const f of postPages) {
+  const html = await readFile(f, 'utf8');
+  highlighted += (html.match(/class="astro-code/g) ?? []).length;
+}
+check(`Code block đã được Shiki highlight trong HTML (${highlighted} block)`, highlighted >= mdCodeBlocks);
+
+// ------------------------------------------------------- 5. Trang & feed
+console.log('\n[5] Trang, sitemap, RSS');
+
+for (const p of ['index.html', 'blog/index.html', 'categories/index.html', '404.html', 'rss.xml', 'sitemap-index.xml']) {
+  check(`Có ${p}`, existsSync(join(DIST, p)));
+}
+
+const rss = await readFile(join(DIST, 'rss.xml'), 'utf8');
+const rssItems = (rss.match(/<item>/g) ?? []).length;
+check(`RSS có đủ ${wpPosts.length} bài`, rssItems === wpPosts.length, `đếm được ${rssItems} item`);
+check('RSS khai báo tiếng Việt', rss.includes('<language>vi-VN</language>'));
+
+// Category: số bài mỗi category phải khớp dữ liệu WordPress
+const wpCats = JSON.parse(await readFile(join(RAW, 'categories.json'), 'utf8'));
+const catPages = distFiles.filter((f) => /dist[\\/]categories[\\/][^\\/]+[\\/]index\.html$/.test(f));
+const expectedCats = wpCats.filter((c) => c.slug !== 'uncategorized' && c.count > 0).length;
+check(
+  `Số trang category khớp (${expectedCats} category ngoài "uncategorized")`,
+  catPages.length === expectedCats,
+  `build ra ${catPages.length} trang`,
+);
+
+// ------------------------------------------------------- 6. Game tương tác
+console.log('\n[6] Web app tương tác đã tách ra iframe');
+
+for (const slug of ['guess-my-number', 'the-pig-game']) {
+  const gamePage = join(DIST, 'games', `${slug}.html`);
+  check(`Có dist/games/${slug}.html`, existsSync(gamePage));
+  if (existsSync(gamePage)) {
+    const html = await readFile(gamePage, 'utf8');
+    check(`  ${slug}: còn <script> để game chạy được`, /<script/.test(html));
+    check(`  ${slug}: còn <style> của game`, /<style/.test(html));
+    check(`  ${slug}: có cơ chế tự báo chiều cao`, html.includes('kcGameHeight'));
+  }
+  const postPage = join(DIST, 'posts', slug, 'index.html');
+  if (existsSync(postPage)) {
+    const html = await readFile(postPage, 'utf8');
+    check(`  ${slug}: bài viết có nhúng iframe game`, html.includes(`/games/${slug}.html`));
+  }
+}
+
+// ------------------------------------------------------- 7. Tiếng Việt & SEO
+console.log('\n[7] Tiếng Việt và SEO');
+
+const home = await readFile(join(DIST, 'index.html'), 'utf8');
+check('Trang chủ khai báo lang="vi"', /<html[^>]+lang="vi"/.test(home));
+check('Trang chủ có meta description', /<meta name="description"/.test(home));
+check('Trang chủ có og:image hoặc og:title', /property="og:title"/.test(home));
+
+// Tiếng Việt có dấu không bị lỗi encode (mojibake)
+const mojibake = [];
+for (const [f, src] of mdSources) {
+  if (/Ã¡|Ã¢|Ä'|áº|Ã­Â|â€™|â€œ/.test(src)) mojibake.push(f);
+}
+check('Không có bài nào bị lỗi encode tiếng Việt', mojibake.length === 0, mojibake.join(', '));
+
+// Mọi bài đều có title và description không rỗng
+const badMeta = [];
+for (const [f, src] of mdSources) {
+  if (!/^title:\s*".+"/m.test(src)) badMeta.push(`${f} (thiếu title)`);
+  if (!/^description:\s*".{10,}"/m.test(src)) badMeta.push(`${f} (description quá ngắn)`);
+}
+check('Mọi bài đều có title và description hợp lệ', badMeta.length === 0, badMeta.join('\n      '));
+
+// Mọi trang bài đều có canonical trỏ đúng domain
+const badCanonical = [];
+for (const f of postPages) {
+  const html = await readFile(f, 'utf8');
+  if (!/<link rel="canonical" href="https:\/\/kclearncode\.pages\.dev\//.test(html)) {
+    badCanonical.push(relative(DIST, f));
+  }
+}
+check('Mọi trang bài đều có canonical đúng domain', badCanonical.length === 0, badCanonical.slice(0, 5).join(', '));
+
+// ------------------------------------------------------- 8. Dung lượng
+console.log('\n[8] Dung lượng');
+
+let totalBytes = 0;
+for (const f of distFiles) totalBytes += (await stat(f)).size;
+const mb = totalBytes / 1024 / 1024;
+check(`Tổng dung lượng site: ${mb.toFixed(1)} MB (dưới hạn 25 MB/file của Cloudflare Pages)`, mb < 500);
+
+const bigFiles = [];
+for (const f of distFiles) {
+  const size = (await stat(f)).size;
+  if (size > 25 * 1024 * 1024) bigFiles.push(`${relative(DIST, f)} (${(size / 1024 / 1024).toFixed(1)} MB)`);
+}
+check('Không file nào vượt 25 MB (giới hạn mỗi file của Cloudflare Pages)', bigFiles.length === 0, bigFiles.join(', '));
+check(`Số file tổng cộng: ${distFiles.length} (giới hạn 20.000 file của Cloudflare Pages)`, distFiles.length < 20000);
+
+// ------------------------------------------------------- Kết luận
+console.log(`\n${'─'.repeat(64)}`);
+console.log(`Đạt: ${passed}   Không đạt: ${failed}`);
+if (failed > 0) {
+  console.log('\nCó phép kiểm tra không đạt — xem chi tiết ở trên.');
+  process.exit(1);
+}
+console.log('\n✓ Toàn bộ kiểm tra tự động đã đạt.');

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guess my number</title>
+<style>
+@import url('https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 62.5%;
+}
+
+body {
+  font-family: 'Press Start 2P', sans-serif;
+  color: #eee;
+  background-color: #222;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* HEADER */
+header {
+  position: relative;
+  height: auto;
+  padding: 2rem 1rem;
+  border-bottom: 5px solid #eee;
+}
+
+h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.between {
+  font-size: 1.6rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.again {
+  margin-bottom: 1rem;
+}
+
+.number {
+  background: #eee;
+  color: #333;
+  font-size: 4rem;
+  width: 10rem;
+  padding: 2rem 0;
+  text-align: center;
+  margin: 1rem auto;
+}
+
+/* MAIN LAYOUT */
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+/* LEFT SECTION */
+.left {
+  width: 100%;
+  max-width: 40rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* RIGHT SECTION */
+.right {
+  width: 100%;
+  max-width: 40rem;
+  font-size: 1.8rem;
+}
+
+/* ELEMENTS STYLE */
+.guess {
+  background: none;
+  border: 3px solid #eee;
+  font-family: inherit;
+  color: inherit;
+  font-size: 4rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 25rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.btn {
+  border: none;
+  background-color: #eee;
+  color: #222;
+  font-size: 2rem;
+  font-family: inherit;
+  padding: 1.5rem 3rem;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #ccc;
+}
+
+.message {
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+}
+
+/* RESPONSIVE DESIGN */
+@media (min-width: 768px) {
+  main {
+    flex-direction: row;
+    justify-content: space-around;
+  }
+
+  .number {
+    font-size: 6rem;
+    width: 12rem;
+  }
+
+  h1 {
+  font-family: 'Press Start 2P', sans-serif;
+  font-size: 3rem;
+  text-align: center;
+  margin-bottom: 1rem;
+ }
+
+  .guess {
+    font-size: 5rem;
+  }
+
+  .btn {
+    font-size: 2.2rem;
+  }
+}
+</style>
+</head>
+<body>
+<div>
+  <header>
+    <h1>Guess My Number!</h1>
+    <p class="between">(Between 1 and 20)</p>
+    <button class="btn again">Again!</button>
+    <div class="number">?</div>
+  </header>
+  <main>
+    <section class="left">
+      <input type="number" class="guess">
+      <button class="btn check">Check!</button>
+    </section>
+    <section class="right">
+      <p class="message">Start guessing…</p>
+      <p class="label-score">💯 Score: <span class="score">20</span></p>
+      <p class="label-highscore">🥇 Highscore: <span class="highscore">0</span></p>
+    </section>
+  </main>
+</div>
+
+<script>
+/* Nội dung từ script.js */
+let secretNumber = Math.trunc(Math.random() * 20) + 1;
+let score = 20;
+let highScore = 0;
+console.log(secretNumber);
+
+const displayMessage = function (message) {
+  document.querySelector('.message').textContent = message;
+};
+
+const displayScore = function (score) {
+  document.querySelector('.score').textContent = score;
+};
+
+document.querySelector('.check').addEventListener('click', function () {
+  const guess = Number(document.querySelector('.guess').value);
+  console.log(guess, typeof guess);
+
+  if (!guess) {
+    displayMessage('No number!');
+  }
+  else if (guess === secretNumber) {
+    displayMessage('Correct Number!');
+    document.querySelector('.number').textContent = secretNumber;
+    document.querySelector('body').style.backgroundColor = '#60b347';
+    document.querySelector('.number').style.width = '30rem';
+    if (score > highScore) {
+      highScore = score;
+      document.querySelector('.highscore').textContent = highScore;
+    }
+  }
+  else if (guess !== secretNumber) {
+    let message = secretNumber < guess ? 'Too high!' : 'Too low!';
+    displayMessage(message);
+    score--;
+    displayScore(score);
+    if (score === 0) {
+      displayMessage('You lost the game');
+    }
+  }
+});
+
+document.querySelector('.again').addEventListener('click', function () {
+  secretNumber = Math.trunc(Math.random() * 20) + 1;
+  score = 20;
+
+  displayMessage('Start guessing...');
+  displayScore(score);
+  document.querySelector('.number').textContent = '?';
+  document.querySelector('.guess').value = '';
+  document.querySelector('body').style.backgroundColor = '#222';
+  document.querySelector('.number').style.width = '15rem';
+  console.log(secretNumber);
+});
+</script>
+<script>
+  // Báo chiều cao thật ra trang cha để iframe không bị cắt hay thừa chỗ trống.
+  const kcReportHeight = () => {
+    const h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    parent.postMessage({ kcGameHeight: h }, '*');
+  };
+  addEventListener('load', kcReportHeight);
+  addEventListener('click', () => requestAnimationFrame(kcReportHeight));
+  // ResizeObserver bọc trong try: nếu môi trường không có nó, throw ở đây sẽ làm
+  // chết cả phần script còn lại và mất luôn cơ chế báo chiều cao.
+  try {
+    new ResizeObserver(kcReportHeight).observe(document.body);
+  } catch {}
+</script>
+</body>
+</html>

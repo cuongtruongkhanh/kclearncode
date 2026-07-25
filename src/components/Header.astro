@@ -1,0 +1,28 @@
+---
+import { SITE, NAV } from '../consts';
+import ThemeToggle from './ThemeToggle.astro';
+
+const path = Astro.url.pathname.replace(/\/+$/, '') || '/';
+
+/** Mục nav được coi là "đang xem" khi đúng đường dẫn, hoặc là trang cha của đường dẫn hiện tại. */
+function isCurrent(href: string): boolean {
+  if (href === '/') return path === '/';
+  return path === href || path.startsWith(`${href}/`);
+}
+---
+
+<header class="site-header">
+  <div class="wrap wrap--wide site-header__inner">
+    <a class="site-title" href="/">{SITE.title}</a>
+    <nav class="site-nav" aria-label="Điều hướng chính">
+      {
+        NAV.filter((item) => item.href !== '/').map((item) => (
+          <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+    <ThemeToggle />
+  </div>
+</header>

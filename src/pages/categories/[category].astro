@@ -1,0 +1,56 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { categorySlug } from '../../consts';
+
+// `satisfies` thay vì annotation trực tiếp: giữ được kiểu thật của props để
+// InferGetStaticPropsType suy ra được, nếu không Astro.props sẽ là `unknown`.
+export const getStaticPaths = (async () => {
+  const posts = await getCollection('posts', ({ data }) => !data.draft);
+
+  const grouped = new Map<string, { name: string; posts: typeof posts }>();
+  for (const post of posts) {
+    for (const name of post.data.categories) {
+      const slug = categorySlug(name);
+      const entry = grouped.get(slug) ?? { name, posts: [] };
+      entry.posts.push(post);
+      grouped.set(slug, entry);
+    }
+  }
+
+  return [...grouped.entries()].map(([slug, { name, posts: list }]) => ({
+    params: { category: slug },
+    props: {
+      name,
+      posts: list.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()),
+    },
+  }));
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { name, posts } = Astro.props as Props;
+---
+
+<BaseLayout title={`Chủ đề: ${name}`} description={`${posts.length} bài viết thuộc chủ đề ${name} trên KcLearnCode.`}>
+  <div class="page-intro">
+    <h1>{name}</h1>
+    <p>{posts.length} bài viết · <a href="/categories">xem tất cả chủ đề</a></p>
+  </div>
+
+  <ul class="post-list">
+    {
+      posts.map((post) => (
+        <PostCard
+          slug={post.id}
+          title={post.data.title}
+          description={post.data.description}
+          pubDate={post.data.pubDate}
+          categories={post.data.categories}
+        />
+      ))
+    }
+  </ul>
+</BaseLayout>

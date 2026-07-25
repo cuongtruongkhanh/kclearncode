@@ -1,0 +1,33 @@
+[
+  {
+    "id": 1,
+    "name": "cuongtruong",
+    "url": "https://kclearncode.com/cuongtruong",
+    "description": "",
+    "link": "https://kclearncode.com/author/cuongtruong/",
+    "slug": "cuongtruong",
+    "avatar_urls": {
+      "24": "https://secure.gravatar.com/avatar/8a1631df5eceb44fd954cd0875a57d1f?s=24&d=monsterid&r=g",
+      "48": "https://secure.gravatar.com/avatar/8a1631df5eceb44fd954cd0875a57d1f?s=48&d=monsterid&r=g",
+      "96": "https://secure.gravatar.com/avatar/8a1631df5eceb44fd954cd0875a57d1f?s=96&d=monsterid&r=g"
+    },
+    "meta": [],
+    "_links": {
+      "self": [
+        {
+          "href": "https://kclearncode.com/wp-json/wp/v2/users/1",
+          "targetHints": {
+            "allow": [
+              "GET"
+            ]
+          }
+        }
+      ],
+      "collection": [
+        {
+          "href": "https://kclearncode.com/wp-json/wp/v2/users"
+        }
+      ]
+    }
+  }
+]

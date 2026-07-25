@@ -1,0 +1,114 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import { categorySlug, formatDate } from '../consts';
+
+interface Props {
+  title: string;
+  description: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  categories: string[];
+  tags: string[];
+  heroImage?: string;
+  heroImageAlt?: string;
+  prev?: { slug: string; title: string };
+  next?: { slug: string; title: string };
+}
+
+const {
+  title,
+  description,
+  pubDate,
+  updatedDate,
+  categories,
+  tags,
+  heroImage,
+  heroImageAlt,
+  prev,
+  next,
+} = Astro.props;
+---
+
+<BaseLayout title={title} description={description} image={heroImage} type="article" publishedTime={pubDate}>
+  <article>
+    <header class="post-header">
+      <div class="post-header__meta">
+        <time datetime={pubDate.toISOString().slice(0, 10)}>{formatDate(pubDate)}</time>
+        {
+          categories.map((cat) => (
+            <>
+              <span aria-hidden="true">·</span>
+              <a href={`/categories/${categorySlug(cat)}`}>{cat}</a>
+            </>
+          ))
+        }
+      </div>
+      <h1>{title}</h1>
+      {updatedDate && <p class="post-header__meta">Cập nhật: {formatDate(updatedDate)}</p>}
+    </header>
+
+    {heroImage && <img class="post-hero" src={heroImage} alt={heroImageAlt ?? ''} loading="eager" />}
+
+    <div class="prose">
+      <slot />
+    </div>
+
+    {
+      tags.length > 0 && (
+        <ul class="chip-row" style="margin-top:2.5rem">
+          {tags.map((tag) => (
+            <li>
+              <span class="chip">#{tag}</span>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </article>
+
+  {
+    (prev || next) && (
+      <nav class="post-nav" aria-label="Bài trước và bài sau">
+        {prev ? (
+          <a class="post-nav__link" href={`/posts/${prev.slug}`}>
+            <span class="post-nav__label">← Bài trước</span>
+            <span class="post-nav__title">{prev.title}</span>
+          </a>
+        ) : (
+          <span />
+        )}
+        {next && (
+          <a class="post-nav__link post-nav__link--next" href={`/posts/${next.slug}`}>
+            <span class="post-nav__label">Bài sau →</span>
+            <span class="post-nav__title">{next.title}</span>
+          </a>
+        )}
+      </nav>
+    )
+  }
+</BaseLayout>
+
+<script>
+  // Hai bài game (guess-my-number, the-pig-game) được nhúng bằng iframe để CSS reset
+  // của game không rò ra layout blog. Iframe tự báo chiều cao thật qua postMessage,
+  // ở đây chỉ việc áp lại để không bị cắt nội dung hay thừa chỗ trống.
+  const games = document.querySelectorAll<HTMLIFrameElement>('iframe[data-kc-game]');
+  if (games.length > 0) {
+    addEventListener('message', (event) => {
+      const height = (event.data as { kcGameHeight?: unknown } | null)?.kcGameHeight;
+      if (typeof height !== 'number' || height < 100 || height > 5000) return;
+      for (const frame of games) {
+        if (frame.contentWindow === event.source) frame.style.height = `${height}px`;
+      }
+    });
+  }
+
+  // Bảng rộng phải tự cuộn trong khung của nó, không đẩy cả trang cuộn ngang.
+  for (const table of document.querySelectorAll('.prose table')) {
+    if (table.parentElement?.classList.contains('table-scroll')) continue;
+    const box = document.createElement('div');
+    box.className = 'table-scroll';
+    table.replaceWith(box);
+    box.appendChild(table);
+  }
+</script>
