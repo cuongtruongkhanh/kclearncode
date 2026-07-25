@@ -1,0 +1,83 @@
+---
+import type { Page } from 'astro';
+
+interface Props {
+  page: Page<unknown>;
+}
+
+const { page } = Astro.props;
+
+/**
+ * Dãy số trang cần hiện. Với blog cỡ nhỏ (dưới 8 trang) thì hiện hết cho gọn;
+ * nhiều hơn thì rút gọn quanh trang hiện tại và luôn giữ trang đầu/cuối,
+ * để dãy nút không tràn ngang trên điện thoại.
+ */
+function pageNumbers(current: number, last: number): (number | '…')[] {
+  if (last <= 7) return Array.from({ length: last }, (_, i) => i + 1);
+
+  const items = new Set<number>([1, last, current]);
+  if (current - 1 > 1) items.add(current - 1);
+  if (current + 1 < last) items.add(current + 1);
+
+  const sorted = [...items].sort((a, b) => a - b);
+  const out: (number | '…')[] = [];
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i]! - sorted[i - 1]! > 1) out.push('…');
+    out.push(sorted[i]!);
+  }
+  return out;
+}
+
+/** Astro sinh trang 1 ở đường dẫn gốc (/blog/), các trang sau là /blog/2/… */
+const hrefFor = (n: number) => (n === 1 ? '/blog/' : `/blog/${n}/`);
+
+const numbers = pageNumbers(page.currentPage, page.lastPage);
+---
+
+{
+  page.lastPage > 1 && (
+    <nav class="pagination" aria-label="Phân trang danh sách bài viết">
+      {page.url.prev ? (
+        <a class="pagination__step" href={page.url.prev} rel="prev">
+          ← Mới hơn
+        </a>
+      ) : (
+        <span class="pagination__step pagination__step--off" aria-hidden="true">
+          ← Mới hơn
+        </span>
+      )}
+
+      <ul class="pagination__pages">
+        {numbers.map((n) =>
+          n === '…' ? (
+            <li class="pagination__gap" aria-hidden="true">
+              …
+            </li>
+          ) : (
+            <li>
+              {n === page.currentPage ? (
+                <span class="pagination__num pagination__num--current" aria-current="page">
+                  {n}
+                </span>
+              ) : (
+                <a class="pagination__num" href={hrefFor(n)} aria-label={`Trang ${n}`}>
+                  {n}
+                </a>
+              )}
+            </li>
+          ),
+        )}
+      </ul>
+
+      {page.url.next ? (
+        <a class="pagination__step" href={page.url.next} rel="next">
+          Cũ hơn →
+        </a>
+      ) : (
+        <span class="pagination__step pagination__step--off" aria-hidden="true">
+          Cũ hơn →
+        </span>
+      )}
+    </nav>
+  )
+}

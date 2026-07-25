@@ -14,9 +14,21 @@ interface Props {
   publishedTime?: Date;
   /** Trang bài viết dùng khung hẹp cho dễ đọc; danh sách dùng khung rộng hơn. */
   wide?: boolean;
+  /** Dùng cho trang có phân trang: cho Google biết quan hệ giữa các trang trong chuỗi. */
+  prevUrl?: string | undefined;
+  nextUrl?: string | undefined;
 }
 
-const { title, description = SITE.description, image, type = 'website', publishedTime, wide = false } = Astro.props;
+const {
+  title,
+  description = SITE.description,
+  image,
+  type = 'website',
+  publishedTime,
+  wide = false,
+  prevUrl,
+  nextUrl,
+} = Astro.props;
 
 const pageTitle = title === SITE.title ? title : `${title} — ${SITE.title}`;
 // Chuẩn hoá về dạng CÓ dấu / ở cuối để khớp URL mà Cloudflare Workers thực sự trả về
@@ -34,6 +46,9 @@ const ogImage = image ? new URL(image, Astro.site) : undefined;
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+
+    {prevUrl && <link rel="prev" href={new URL(prevUrl, Astro.site)} />}
+    {nextUrl && <link rel="next" href={new URL(nextUrl, Astro.site)} />}
 
     {
       GOOGLE_SITE_VERIFICATION && (

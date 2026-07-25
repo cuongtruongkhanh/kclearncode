@@ -54,6 +54,10 @@ const { REMOVED_WP_IDS, REMOVED_POSTS } = await import('./removed-posts.mjs');
 const allWpPosts = JSON.parse(await readFile(join(RAW, 'posts.json'), 'utf8'));
 const wpPosts = allWpPosts.filter((p) => !REMOVED_WP_IDS.has(p.id));
 
+// Đọc consts.ts dạng text: Node không import được TypeScript, mà nếu bọc try/catch thì
+// phép kiểm tra sẽ âm thầm bị bỏ qua — tệ hơn là không có nó.
+const constsSrc = await readFile(join(ROOT, 'src', 'consts.ts'), 'utf8');
+
 const mdFiles = (await readdir(POSTS)).filter((f) => f.endsWith('.md'));
 const mdSources = new Map();
 for (const f of mdFiles) mdSources.set(f, await readFile(join(POSTS, f), 'utf8'));
@@ -211,6 +215,53 @@ for (const p of ['index.html', 'blog/index.html', 'categories/index.html', '404.
   check(`Có ${p}`, existsSync(join(DIST, p)));
 }
 
+// ---- Phân trang /blog/: mỗi trang đúng POSTS_PER_PAGE bài, cộng lại đủ tổng số bài
+const perPage = Number(constsSrc.match(/POSTS_PER_PAGE\s*=\s*(\d+)/)?.[1] ?? 0);
+check('Đọc được POSTS_PER_PAGE từ src/consts.ts', perPage > 0);
+
+const expectedPages = Math.ceil(mdFiles.length / perPage);
+const blogPages = [];
+for (let n = 1; n <= expectedPages + 1; n++) {
+  const f = n === 1 ? join(DIST, 'blog', 'index.html') : join(DIST, 'blog', String(n), 'index.html');
+  if (existsSync(f)) blogPages.push({ n, html: await readFile(f, 'utf8') });
+}
+check(
+  `Số trang /blog/ đúng (${expectedPages} trang cho ${mdFiles.length} bài, ${perPage} bài/trang)`,
+  blogPages.length === expectedPages,
+  `tìm thấy ${blogPages.length} trang`,
+);
+
+const perPageCounts = blogPages.map((p) => (p.html.match(/class="post-card__title"/g) ?? []).length);
+check(
+  `Tổng bài trên các trang /blog/ khớp (${mdFiles.length})`,
+  perPageCounts.reduce((a, b) => a + b, 0) === mdFiles.length,
+  `đếm được ${perPageCounts.join(' + ')} = ${perPageCounts.reduce((a, b) => a + b, 0)}`,
+);
+check(
+  'Mọi trang trừ trang cuối đều đủ số bài mỗi trang',
+  perPageCounts.slice(0, -1).every((c) => c === perPage),
+  `số bài từng trang: ${perPageCounts.join(', ')}`,
+);
+
+// rel=prev/next phải đúng: trang đầu không có prev, trang cuối không có next
+if (blogPages.length > 1) {
+  const first = blogPages[0].html;
+  const last = blogPages.at(-1).html;
+  check('Trang /blog/ đầu tiên không có rel="prev"', !/<link rel="prev"/.test(first));
+  check('Trang /blog/ đầu tiên có rel="next"', /<link rel="next"/.test(first));
+  check('Trang /blog/ cuối không có rel="next"', !/<link rel="next"/.test(last));
+  check('Trang /blog/ cuối có rel="prev"', /<link rel="prev"/.test(last));
+}
+
+// Không bài nào bị trùng hoặc thiếu khi trải qua các trang
+const slugsOnPages = blogPages.flatMap((p) => [...p.html.matchAll(/href="\/posts\/([^/"]+)\//g)].map((m) => m[1]));
+const uniqueSlugs = new Set(slugsOnPages);
+check(
+  'Không bài nào bị lặp giữa các trang phân trang',
+  uniqueSlugs.size === mdFiles.length,
+  `${slugsOnPages.length} link tới ${uniqueSlugs.size} bài khác nhau, cần ${mdFiles.length}`,
+);
+
 const rss = await readFile(join(DIST, 'rss.xml'), 'utf8');
 const rssItems = (rss.match(/<item>/g) ?? []).length;
 check(`RSS có đủ ${expectedPosts} bài`, rssItems === expectedPosts, `đếm được ${rssItems} item`);
@@ -278,9 +329,6 @@ check('Trang chủ khai báo lang="vi"', /<html[^>]+lang="vi"/.test(home));
 
 // Thẻ xác thực Google Search Console: Google yêu cầu giữ vĩnh viễn, xoá là mất quyền
 // truy cập. Phải nằm trong <head>, trước <body>, đúng như hướng dẫn của Google.
-// Đọc consts.ts dạng text: Node không import được TypeScript, mà nếu bọc try/catch thì
-// phép kiểm tra sẽ âm thầm bị bỏ qua — tệ hơn là không có nó.
-const constsSrc = await readFile(join(ROOT, 'src', 'consts.ts'), 'utf8');
 const GOOGLE_SITE_VERIFICATION = constsSrc.match(/GOOGLE_SITE_VERIFICATION\s*=\s*'([^']*)'/)?.[1] ?? null;
 check('Đọc được GOOGLE_SITE_VERIFICATION từ src/consts.ts', GOOGLE_SITE_VERIFICATION !== null);
 

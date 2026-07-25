@@ -334,6 +334,131 @@ a:hover {
   margin-top: 3.5rem;
 }
 
+/* ---------------------------------------------------------- phân trang */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 3.5rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.pagination__pages {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* Nếu có nhiều trang thì dãy số tự cuộn trong khung của nó, không đẩy cả trang cuộn ngang */
+  overflow-x: auto;
+  order: 2;
+  flex-basis: 100%;
+  justify-content: center;
+}
+
+.pagination__num,
+.pagination__step {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  line-height: 1;
+  text-decoration: none;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.pagination__step {
+  order: 1;
+  color: var(--text-muted);
+}
+
+.pagination__step:last-of-type {
+  order: 3;
+}
+
+a.pagination__num:hover,
+a.pagination__step:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pagination__num--current {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Nút "Mới hơn"/"Cũ hơn" khi đã ở đầu/cuối: vẫn giữ chỗ để dãy nút không nhảy */
+.pagination__step--off {
+  opacity: 0.35;
+  border-style: dashed;
+  cursor: default;
+}
+
+.pagination__gap {
+  padding: 0 0.25rem;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+@media (min-width: 34rem) {
+  .pagination__pages {
+    order: 2;
+    flex-basis: auto;
+  }
+}
+
+/* Liên kết "Bài cũ hơn →" ở cuối trang chủ */
+.more-link-wrap {
+  margin-top: 3.5rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.more-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.more-link span {
+  transition: transform 0.15s ease;
+}
+
+.more-link:hover span {
+  transform: translateX(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .more-link span {
+    transition: none;
+  }
+}
+
 /* ------------------------------------------------------------ tag / chip */
 
 .chip {

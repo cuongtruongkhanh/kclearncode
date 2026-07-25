@@ -100,7 +100,7 @@ Ngôn ngữ dùng được: `javascript`, `typescript`, `python`, `java`, `cshar
 | `npm run build` | Build ra thư mục `dist/` |
 | `npm run preview` | Xem thử bản đã build (giống production nhất) |
 | `npm run check` | Kiểm tra lỗi TypeScript và frontmatter sai kiểu |
-| `npm run verify` | 47 phép kiểm tra tự động (chạy **sau** `npm run build`) |
+| `npm run verify` | 56 phép kiểm tra tự động (chạy **sau** `npm run build`) |
 | `npm run backup` | Tải lại dữ liệu thô từ WordPress cũ (chỉ dùng khi site cũ còn sống) |
 | `npm run migrate` | Dựng lại `.md` từ `_backup/raw-json/` — xem cảnh báo bên dưới |
 | `npm run images` | Tải ảnh còn thiếu về local, chạy lại được nhiều lần |
@@ -122,13 +122,13 @@ Ngôn ngữ dùng được: `javascript`, `typescript`, `python`, `java`, `cshar
 
 ```
 src/
-  content/posts/       28 bài viết dạng Markdown
+  content/posts/       29 bài viết dạng Markdown
   content.config.ts    Schema frontmatter (sai kiểu là build fail ngay)
   consts.ts            Tên site, menu, hàm slug hoá & format ngày
   ../astro.config.mjs  ⚠️ Domain của site (`site:`) — sinh canonical/sitemap/RSS
   layouts/             BaseLayout (SEO, theme), PostLayout (bài viết)
   components/          Header, Footer, PostCard, ThemeToggle
-  pages/               Các route: /, /blog, /posts/…, /categories/…, /rss.xml, /404
+  pages/               Các route: /, /blog/[...page] (phân trang), /posts/…, /categories/…, /rss.xml, /404
   styles/global.css    Toàn bộ CSS (dark/light bằng CSS variables)
 public/
   images/posts/        62 ảnh đã tải về từ WordPress
@@ -136,6 +136,26 @@ public/
 scripts/               Script migrate & kiểm tra
 _backup/raw-json/      Dữ liệu gốc từ WordPress REST API — bản lưu, đừng xoá
 ```
+
+---
+
+## Phân trang
+
+Danh sách bài chia **10 bài mỗi trang**, đổi ở `POSTS_PER_PAGE` trong
+[src/consts.ts](src/consts.ts) — số trang tự tính lại, không phải sửa chỗ nào khác.
+
+| URL | Nội dung |
+|---|---|
+| `/` | 10 bài mới nhất + nút "Bài cũ hơn →" dẫn sang `/blog/2/` |
+| `/blog/` | Trang 1 (10 bài) + dãy nút phân trang |
+| `/blog/2/`, `/blog/3/`… | Các trang tiếp theo |
+
+Trong mỗi trang, bài vẫn được nhóm theo năm để dễ định vị (blog trải dài 10 năm).
+
+Dãy nút phân trang ở [src/components/Pagination.astro](src/components/Pagination.astro).
+Khi vượt 7 trang nó tự rút gọn thành `1 … 4 5 6 … 12` để không tràn ngang trên điện thoại.
+Trang có phân trang cũng phát ra `<link rel="prev">` / `<link rel="next">` cho Google hiểu
+đây là một chuỗi trang.
 
 ---
 

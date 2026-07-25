@@ -2,13 +2,16 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
-import { SITE } from '../consts';
+import { SITE, POSTS_PER_PAGE } from '../consts';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
 
-const recent = posts.slice(0, 10);
+// Trang chủ hiện đúng số bài như trang 1 của /blog/, nên link "cũ hơn" đi thẳng
+// sang /blog/2/ là liền mạch, không bị nhảy hay lặp bài.
+const recent = posts.slice(0, POSTS_PER_PAGE);
+const hasOlder = posts.length > POSTS_PER_PAGE;
 ---
 
 <BaseLayout title={SITE.title} description={SITE.description}>
@@ -35,10 +38,13 @@ const recent = posts.slice(0, 10);
   </ul>
 
   {
-    posts.length > recent.length && (
-      <p style="margin-top:3rem">
-        <a href="/blog/">Xem tất cả {posts.length} bài →</a>
-      </p>
+    hasOlder && (
+      <div class="more-link-wrap">
+        <a class="more-link" href="/blog/2/" rel="next">
+          Bài cũ hơn
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
     )
   }
 </BaseLayout>

@@ -1,0 +1,66 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import Pagination from '../../components/Pagination.astro';
+import { POSTS_PER_PAGE } from '../../consts';
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+  );
+
+  // Astro sinh trang 1 ở /blog/, trang 2 trở đi ở /blog/2/, /blog/3/…
+  return paginate(posts, { pageSize: POSTS_PER_PAGE });
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { page } = Astro.props as Props;
+
+// Nhóm bài trong TRANG NÀY theo năm — blog trải dài 10 năm nên mốc năm giúp định vị nhanh
+const byYear = new Map<number, typeof page.data>();
+for (const post of page.data) {
+  const year = post.data.pubDate.getFullYear();
+  byYear.set(year, [...(byYear.get(year) ?? []), post]);
+}
+const years = [...byYear.keys()].sort((a, b) => b - a);
+
+const isFirst = page.currentPage === 1;
+const title = isFirst ? 'Blog' : `Blog — trang ${page.currentPage}`;
+const description = isFirst
+  ? `Toàn bộ ${page.total} bài viết trên KcLearnCode, xếp từ mới đến cũ.`
+  : `Trang ${page.currentPage}/${page.lastPage} — bài ${page.start + 1}–${page.end + 1} trong ${page.total} bài trên KcLearnCode.`;
+---
+
+<BaseLayout title={title} description={description} prevUrl={page.url.prev} nextUrl={page.url.next}>
+  <div class="page-intro">
+    <h1>Tất cả bài viết</h1>
+    <p>
+      {page.total} bài, xếp từ mới đến cũ.
+      {page.lastPage > 1 && <> Trang {page.currentPage}/{page.lastPage}.</>}
+    </p>
+  </div>
+
+  {
+    years.map((year) => (
+      <section class="year-group">
+        <h2 class="year-heading">{year}</h2>
+        <ul class="post-list">
+          {byYear.get(year)!.map((post) => (
+            <PostCard
+              slug={post.id}
+              title={post.data.title}
+              description={post.data.description}
+              pubDate={post.data.pubDate}
+              categories={post.data.categories}
+            />
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+
+  <Pagination page={page} />
+</BaseLayout>

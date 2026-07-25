@@ -36,6 +36,9 @@ export const NAV = [
   { href: '/posts/about-me/', label: 'About Me' },
 ] as const;
 
+/** Số bài mỗi trang ở danh sách /blog/ và trang chủ. */
+export const POSTS_PER_PAGE = 10;
+
 /** Slug hoá tên category tiếng Việt để làm URL (vd "C#" → "c-sharp"). */
 export function categorySlug(name: string): string {
   const special: Record<string, string> = { 'C#': 'c-sharp' };
