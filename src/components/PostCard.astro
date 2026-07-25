@@ -1,5 +1,5 @@
 ---
-import { categorySlug, formatDate } from '../consts';
+import { categorySlug, formatDate, thumb } from '../consts';
 
 interface Props {
   slug: string;
@@ -7,25 +7,57 @@ interface Props {
   description: string;
   pubDate: Date;
   categories: string[];
+  /**
+   * Ba dạng, khác nhau ở việc ảnh đứng đâu và tiêu đề to bao nhiêu:
+   *  - `lead` bài dẫn trang chủ, ảnh tràn khung
+   *  - `tile` ô trong mosaic trang chủ
+   *  - `row`  dòng ở /blog/ và /categories/<x>/, ảnh nhỏ bên trái để quét nhanh
+   */
+  variant?: 'lead' | 'tile' | 'row';
+  /** Chỉ bật cho ảnh đầu tiên trên trang: tải ngay, không lazy. */
+  eager?: boolean;
 }
 
-const { slug, title, description, pubDate, categories } = Astro.props;
+const { slug, title, description, pubDate, categories, variant = 'tile', eager = false } = Astro.props;
+
+const href = `/posts/${slug}/`;
+const src = thumb(slug, 'tile');
+
+// Bài dẫn đứng một mình trong grid .masthead, không nằm trong danh sách nào — dùng <article>.
+// Hai dạng kia là phần tử của <ul> nên phải là <li>.
+const Tag = variant === 'lead' ? 'article' : 'li';
 ---
 
-<li class="post-card">
-  <div class="post-card__meta">
-    <time datetime={pubDate.toISOString().slice(0, 10)}>{formatDate(pubDate)}</time>
-    {
-      categories.length > 0 && (
-        <>
-          <span aria-hidden="true">·</span>
-          {categories.map((cat) => (
+<Tag class={variant}>
+  {/*
+    Ảnh dẫn tới cùng bài như tiêu đề. Ẩn khỏi screen reader và khỏi thứ tự Tab để người
+    dùng bàn phím không phải bấm hai lần qua cùng một đích; alt rỗng vì tiêu đề ngay bên
+    dưới đã nói đủ.
+  */}
+  <a class={`${variant}__figure`} href={href} tabindex="-1" aria-hidden="true">
+    <img
+      src={src}
+      alt=""
+      loading={eager ? 'eager' : 'lazy'}
+      decoding={eager ? 'sync' : 'async'}
+      fetchpriority={eager ? 'high' : undefined}
+    />
+  </a>
+
+  <div class={`${variant}__body`}>
+    <p class="meta">
+      <time datetime={pubDate.toISOString().slice(0, 10)}>{formatDate(pubDate)}</time>
+      {
+        categories.map((cat) => (
+          <>
+            <span class="meta__sep" aria-hidden="true">/</span>
             <a href={`/categories/${categorySlug(cat)}/`}>{cat}</a>
-          ))}
-        </>
-      )
-    }
+          </>
+        ))
+      }
+    </p>
+
+    <h2 class={`${variant}__title`}><a href={href}>{title}</a></h2>
+    <p class={`${variant}__desc`}>{description}</p>
   </div>
-  <h2 class="post-card__title"><a href={`/posts/${slug}/`}>{title}</a></h2>
-  <p class="post-card__desc">{description}</p>
-</li>
+</Tag>

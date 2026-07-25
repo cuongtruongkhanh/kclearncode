@@ -12,19 +12,25 @@ for (const post of posts) {
 const categories = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'vi'));
 ---
 
-<BaseLayout title="Chủ đề" description="Các chủ đề bài viết trên KcLearnCode.">
+<BaseLayout title="Chủ đề" description="Các chủ đề bài viết trên KcLearnCode." wide>
   <div class="page-intro">
     <h1>Chủ đề</h1>
     <p>{categories.length} chủ đề trên {posts.length} bài viết.</p>
   </div>
 
-  <ul class="category-grid">
+  {/*
+    Dùng đúng kiểu dòng-có-chấm-dẫn như cột chủ đề ở trang chủ. Trước đó chỗ này là card
+    có viền — cùng một dữ liệu mà hai ngôn ngữ hình khác nhau thì người đọc phải học lại
+    giao diện ở mỗi trang.
+  */}
+  <ul class="cat-columns">
     {
       categories.map(([name, count]) => (
         <li>
-          <a class="category-card" href={`/categories/${categorySlug(name)}/`}>
+          <a class="cat-line" href={`/categories/${categorySlug(name)}/`}>
             <span>{name}</span>
-            <span class="category-card__count">{count} bài</span>
+            <span class="cat-line__rule" aria-hidden="true" />
+            <span class="cat-line__count">{count} bài</span>
           </a>
         </li>
       ))

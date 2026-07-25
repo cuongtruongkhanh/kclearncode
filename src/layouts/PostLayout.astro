@@ -1,8 +1,16 @@
 ---
 import BaseLayout from './BaseLayout.astro';
-import { categorySlug, formatDate } from '../consts';
+import { categorySlug, formatDate, thumb } from '../consts';
+// Kích thước ảnh do scripts/thumbs.mjs ghi ra. Cần nó để đặt width/height cho ảnh hero —
+// ảnh ở đây hiện nguyên khung chứ không cắt 16:9 như ô mosaic, nên không suy được tỷ lệ
+// từ CSS. Không có width/height là trang nhảy một nhịp khi ảnh tải xong.
+import thumbManifest from '../../public/images/thumbs/manifest.json';
+
+const wideSizes = thumbManifest.wide as Record<string, { width: number; height: number }>;
 
 interface Props {
+  /** id bài (= slug). Dùng để tra ảnh đã tối ưu trong public/images/thumbs/. */
+  postId: string;
   title: string;
   description: string;
   pubDate: Date;
@@ -16,6 +24,7 @@ interface Props {
 }
 
 const {
+  postId,
   title,
   description,
   pubDate,
@@ -27,27 +36,42 @@ const {
   prev,
   next,
 } = Astro.props;
+
+const heroSize = wideSizes[postId];
 ---
 
 <BaseLayout title={title} description={description} image={heroImage} type="article" publishedTime={pubDate}>
   <article>
     <header class="post-header">
-      <div class="post-header__meta">
+      <p class="meta">
         <time datetime={pubDate.toISOString().slice(0, 10)}>{formatDate(pubDate)}</time>
         {
           categories.map((cat) => (
             <>
-              <span aria-hidden="true">·</span>
+              <span class="meta__sep" aria-hidden="true">/</span>
               <a href={`/categories/${categorySlug(cat)}/`}>{cat}</a>
             </>
           ))
         }
-      </div>
+      </p>
       <h1>{title}</h1>
-      {updatedDate && <p class="post-header__meta">Cập nhật: {formatDate(updatedDate)}</p>}
+      {updatedDate && <p class="meta">Cập nhật: {formatDate(updatedDate)}</p>}
     </header>
 
-    {heroImage && <img class="post-hero" src={heroImage} alt={heroImageAlt ?? ''} loading="eager" />}
+    {
+      heroImage && (
+        <img
+          class="post-hero"
+          src={thumb(postId, 'wide')}
+          alt={heroImageAlt ?? ''}
+          width={heroSize?.width}
+          height={heroSize?.height}
+          loading="eager"
+          decoding="sync"
+          fetchpriority="high"
+        />
+      )
+    }
 
     <div class="prose">
       <slot />

@@ -2,6 +2,18 @@
 import { SITE, GOOGLE_SITE_VERIFICATION } from '../consts';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+
+/*
+  Font self-host, bundle lúc build — KHÔNG request ra CDN nào.
+  Chỉ lấy subset latin + vietnamese (lý do ở fonts.css). Plex Mono hai weight:
+  400 cho code, 500 cho nhãn và số.
+*/
+import '../styles/fonts.css';
+import '@fontsource/ibm-plex-mono/latin-400.css';
+import '@fontsource/ibm-plex-mono/vietnamese-400.css';
+import '@fontsource/ibm-plex-mono/latin-500.css';
+import '@fontsource/ibm-plex-mono/vietnamese-500.css';
+
 import '../styles/global.css';
 
 interface Props {

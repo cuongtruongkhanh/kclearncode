@@ -1,27 +1,56 @@
 ---
-// Nút chuyển dark/light. Trạng thái lưu ở localStorage;
-// việc gắn data-theme LÚC ĐẦU nằm trong <head> của BaseLayout để tránh nháy sáng.
+// Nút chuyển ca — vật duy nhất thuộc cả ca ngày lẫn ca đêm (viền mustard ở cả hai).
+// Trạng thái lưu ở localStorage; việc gắn data-theme LÚC ĐẦU nằm trong <head> của
+// BaseLayout để tránh nháy sáng.
+//
+// Nhãn nói ca ĐANG BẬT. Riêng "Ca ngày" thì chưa nói được bấm vào sẽ ra gì, nên có thêm
+// một câu chỉ screen reader đọc. Câu đó đúng ở cả hai ca nên không cần JS cập nhật, và
+// nhãn vẫn hiển thị đúng ngay cả khi JS chưa chạy.
 ---
 
-<button class="theme-toggle" type="button" aria-label="Chuyển chế độ sáng/tối" title="Chuyển chế độ sáng/tối">
-  <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-  </svg>
-  <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="4"></circle>
-    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
-  </svg>
+<button class="shift-toggle" type="button">
+  <span class="is-day">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4"></circle>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+    </svg>
+    <span>Ca ngày</span>
+  </span>
+  <span class="is-night">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+    <span>Ca đêm</span>
+  </span>
+  <span class="sr-only">— bấm để chuyển ca</span>
 </button>
 
 <script>
-  const btn = document.querySelector<HTMLButtonElement>('.theme-toggle');
+  const btn = document.querySelector<HTMLButtonElement>('.shift-toggle');
+  const root = document.documentElement;
+
+  /** 420ms, khớp đúng thời lượng transition khai báo cho `.shifting` trong global.css. */
+  const SHIFT_MS = 420;
+  let shiftTimer: ReturnType<typeof setTimeout> | undefined;
 
   btn?.addEventListener('click', () => {
     const current =
-      document.documentElement.dataset.theme ??
-      (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      root.dataset.theme ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = next;
-    localStorage.setItem('kc-theme', next);
+
+    // Chỉ bật transition đúng lúc bấm rồi tắt: không để nó thường trực, vừa đỡ tốn khi
+    // cuộn/hover, vừa không nháy màu ở lần vẽ đầu tiên khi script trong <head> gắn theme.
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      root.classList.add('shifting');
+      clearTimeout(shiftTimer);
+      shiftTimer = setTimeout(() => root.classList.remove('shifting'), SHIFT_MS);
+    }
+
+    root.dataset.theme = next;
+    try {
+      localStorage.setItem('kc-theme', next);
+    } catch {
+      /* localStorage bị chặn — vẫn đổi được ca, chỉ là không nhớ sang lần sau */
+    }
   });
 </script>

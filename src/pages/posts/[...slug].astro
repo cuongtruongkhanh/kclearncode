@@ -27,6 +27,6 @@ const { post, prev, next } = Astro.props as Props;
 const { Content } = await render(post);
 ---
 
-<PostLayout {...post.data} prev={prev} next={next}>
+<PostLayout postId={post.id} {...post.data} prev={prev} next={next}>
   <Content />
 </PostLayout>

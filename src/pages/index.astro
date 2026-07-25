@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
-import { SITE, POSTS_PER_PAGE } from '../consts';
+import { SITE, POSTS_PER_PAGE, categorySlug } from '../consts';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
@@ -11,22 +11,74 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
 // Trang chủ hiện đúng số bài như trang 1 của /blog/, nên link "cũ hơn" đi thẳng
 // sang /blog/2/ là liền mạch, không bị nhảy hay lặp bài.
 const recent = posts.slice(0, POSTS_PER_PAGE);
+const [lead, ...rest] = recent;
 const hasOlder = posts.length > POSTS_PER_PAGE;
+
+// Số đếm chủ đề là số THẬT trên toàn bộ bài — cùng cách tính với /categories/,
+// để hai trang không bao giờ nói hai con số khác nhau.
+const counts = new Map<string, number>();
+for (const post of posts) {
+  for (const cat of post.data.categories) counts.set(cat, (counts.get(cat) ?? 0) + 1);
+}
+const topCategories = [...counts.entries()]
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'vi'))
+  .slice(0, 6);
 ---
 
-<BaseLayout title={SITE.title} description={SITE.description}>
-  <div class="page-intro">
-    <h1>{SITE.description}</h1>
-    <p>
-      Nơi mình gom lại mấy thứ học được từ việc đi tìm lỗi của người khác — và vài chuyện đời chẳng
-      liên quan gì đến code
+<BaseLayout title={SITE.title} description={SITE.description} wide>
+  {/*
+    Câu giới thiệu site là h1 nên phải đứng TRƯỚC tiêu đề bài dẫn (h2) trong DOM — thứ tự
+    heading mà lộn thì screen reader đọc ra một trang không có gốc.
+    Nhưng nó đặt cỡ nhỏ: chữ to duy nhất trên trang chủ là tiêu đề bài mới nhất. Để hai
+    dòng serif 3rem cạnh nhau là chúng tranh nhau, chẳng cái nào là điểm nhìn.
+  */}
+  <div class="thesis">
+    <h1 class="thesis__line">{SITE.description}</h1>
+    <p class="thesis__note">
+      Nơi mình gom lại mấy thứ học được từ việc đi tìm lỗi của người khác — và vài chuyện đời
+      chẳng liên quan gì đến code
     </p>
   </div>
 
-  <ul class="post-list">
+  <div class="masthead">
     {
-      recent.map((post) => (
+      lead && (
         <PostCard
+          variant="lead"
+          eager
+          slug={lead.id}
+          title={lead.data.title}
+          description={lead.data.description}
+          pubDate={lead.data.pubDate}
+          categories={lead.data.categories}
+        />
+      )
+    }
+
+    <nav class="cat-panel" aria-labelledby="cat-panel-heading">
+      <h2 class="cat-panel__heading" id="cat-panel-heading">Chủ đề</h2>
+      <ul class="cat-panel__list">
+        {
+          topCategories.map(([name, count]) => (
+            <li>
+              <a class="cat-line" href={`/categories/${categorySlug(name)}/`}>
+                <span>{name}</span>
+                <span class="cat-line__rule" aria-hidden="true" />
+                <span class="cat-line__count">{count}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <a class="cat-panel__all" href="/categories/">Xem tất cả chủ đề</a>
+    </nav>
+  </div>
+
+  <ul class="mosaic">
+    {
+      rest.map((post) => (
+        <PostCard
+          variant="tile"
           slug={post.id}
           title={post.data.title}
           description={post.data.description}

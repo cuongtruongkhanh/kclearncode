@@ -39,6 +39,17 @@ export const NAV = [
 /** Số bài mỗi trang ở danh sách /blog/ và trang chủ. */
 export const POSTS_PER_PAGE = 10;
 
+/**
+ * Đường dẫn thumbnail WebP do scripts/thumbs.mjs sinh ra. Quy tắc đặt tên lặp lại ở đó —
+ * đổi bên này phải đổi cả bên kia (scripts/verify.mjs có phép kiểm canh việc thiếu file).
+ *
+ *  - `tile` 720×405, đã cắt 16:9 sẵn — cho ô mosaic và dòng danh sách.
+ *  - `wide` rộng tối đa 1440, không cắt — cho ảnh hero trong trang bài.
+ */
+export function thumb(postId: string, variant: 'tile' | 'wide'): string {
+  return `/images/thumbs/${postId}-${variant}.webp`;
+}
+
 /** Slug hoá tên category tiếng Việt để làm URL (vd "C#" → "c-sharp"). */
 export function categorySlug(name: string): string {
   const special: Record<string, string> = { 'C#': 'c-sharp' };

@@ -1,0 +1,125 @@
+{
+  "variants": [
+    "tile",
+    "wide"
+  ],
+  "quality": 72,
+  "wide": {
+    "300-bai-code-thieu-nhi-bai-toan-two-sum": {
+      "width": 956,
+      "height": 536
+    },
+    "300-bai-code-thieu-nhijava-bai-toan-roman-to-integer": {
+      "width": 782,
+      "height": 539
+    },
+    "about-me": {
+      "width": 960,
+      "height": 960
+    },
+    "better-call-saul-tinh-yeu-va-cam-nhan": {
+      "width": 1290,
+      "height": 727
+    },
+    "cach-chay-tc-automation-o-che-do-an-danh-incognito-mode-su-dung-selenium-specflow-va-c": {
+      "width": 612,
+      "height": 408
+    },
+    "cau-chuyen-ngay-8-3": {
+      "width": 1440,
+      "height": 1908
+    },
+    "chuyen-di-lam": {
+      "width": 960,
+      "height": 958
+    },
+    "cookies-cong-nghe-an-giup-internet-hoat-dong-nhung-cung-gay-lo-ngai-ve-quyen-rieng-tu": {
+      "width": 687,
+      "height": 264
+    },
+    "di-day-online-o-t3h": {
+      "width": 1011,
+      "height": 702
+    },
+    "di-mua-dao-ngay-29-tet": {
+      "width": 960,
+      "height": 696
+    },
+    "dung-cam-buoc-di-hay-dung-cam-o-lai": {
+      "width": 1080,
+      "height": 1350
+    },
+    "eclipsemaven-fix-loi-could-not-get-the-value-for-parameter-encoding-for-plugin-execution-default-resources": {
+      "width": 568,
+      "height": 366
+    },
+    "guess-my-number": {
+      "width": 1440,
+      "height": 1086
+    },
+    "hen-ho-thoi-cap-3": {
+      "width": 1440,
+      "height": 1920
+    },
+    "huong-dan-sua-loi-npm-ps1-cannot-be-loaded-because-running-scripts-is-disabled-on-this-system": {
+      "width": 600,
+      "height": 600
+    },
+    "khi-anh-cong-nhan-kiem-thu-duoc-len-bao": {
+      "width": 655,
+      "height": 343
+    },
+    "khi-ban-lam-tester-cho-lg-nhung-bi-khach-hang-mua-tivi-doi-boc-phot": {
+      "width": 526,
+      "height": 937
+    },
+    "know-your-menu": {
+      "width": 530,
+      "height": 296
+    },
+    "kungfu-panda-lord-shen-bien-tuyet-vong-thanh-da-tam": {
+      "width": 1440,
+      "height": 612
+    },
+    "mui-gio-cua-ban": {
+      "width": 988,
+      "height": 2048
+    },
+    "phong-bi-ngay-nha-giao": {
+      "width": 1440,
+      "height": 1080
+    },
+    "python-tu-khong-den-co": {
+      "width": 1440,
+      "height": 733
+    },
+    "review-film-arrival-cuoc-do-bo-bi-an": {
+      "width": 640,
+      "height": 360
+    },
+    "review-sach-einstein-cuoc-doi-va-vu-tru-mot-cuon-sach-hay-nhung-ken-nguoi-doc": {
+      "width": 500,
+      "height": 353
+    },
+    "review-sach-mau-ban-thien-tai-lua-dao-cua-gioi-cong-nghe-y-hoc": {
+      "width": 800,
+      "height": 441
+    },
+    "tan-man-ngay-nha-giao-viet-nam": {
+      "width": 768,
+      "height": 960
+    },
+    "ung-dung-method-chaining-fluent-interface-trong-automation-test": {
+      "width": 480,
+      "height": 270
+    },
+    "vi-sao-nen-chon-playwright-thay-vi-selenium": {
+      "width": 832,
+      "height": 800
+    },
+    "vibe-coding-va-van-de-goi-ten-thanh-phan-giao-dien": {
+      "width": 1200,
+      "height": 630
+    }
+  }
+}

@@ -7,7 +7,7 @@
  */
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, basename } from 'node:path';
 
 const ROOT = process.cwd();
 const DIST = join(ROOT, 'dist');
@@ -178,6 +178,41 @@ check(
 const noHero = [...mdSources].filter(([, src]) => !/^heroImage:/m.test(src)).map(([f]) => f);
 check('Mọi bài đều có heroImage', noHero.length === 0, noHero.join(', '));
 
+// Thumbnail WebP do scripts/thumbs.mjs sinh — layout tạp chí ở trang chủ và danh sách dùng
+// hẳn ảnh này, thiếu là ô trống. Ảnh gốc nằm trong public/ nên astro:assets không lo được,
+// phải tự canh.
+const THUMB_VARIANTS = ['tile', 'wide'];
+const missingThumbs = [];
+for (const [file] of mdSources) {
+  const id = basename(file, '.md').replace(/^\d{4}-\d{2}-/, '');
+  for (const variant of THUMB_VARIANTS) {
+    const rel = join('images', 'thumbs', `${id}-${variant}.webp`);
+    if (!existsSync(join(ROOT, 'public', rel)) || !existsSync(join(DIST, rel))) {
+      missingThumbs.push(`${id}-${variant}.webp`);
+    }
+  }
+}
+check(
+  `Mọi bài đều có thumbnail ${THUMB_VARIANTS.join(' + ')} trong public/ và dist/`,
+  missingThumbs.length === 0,
+  missingThumbs.length ? `thiếu: ${missingThumbs.join(', ')} — chạy: node scripts/thumbs.mjs` : '',
+);
+
+// PostLayout.astro đọc kích thước ảnh `wide` từ manifest để đặt width/height chống nhảy
+// layout. Manifest lệch với số bài là có bài bị thiếu số đo.
+const manifestPath = join(ROOT, 'public', 'images', 'thumbs', 'manifest.json');
+if (existsSync(manifestPath)) {
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const sized = Object.keys(manifest.wide ?? {}).length;
+  check(
+    `Manifest thumbnail có kích thước cho đủ ${mdSources.size} bài`,
+    sized === mdSources.size,
+    `manifest có ${sized}`,
+  );
+} else {
+  check('Có public/images/thumbs/manifest.json', false, 'chạy: node scripts/thumbs.mjs');
+}
+
 // ------------------------------------------------------- 4. Code block
 console.log('\n[4] Code block');
 
@@ -231,7 +266,8 @@ check(
   `tìm thấy ${blogPages.length} trang`,
 );
 
-const perPageCounts = blogPages.map((p) => (p.html.match(/class="post-card__title"/g) ?? []).length);
+// /blog/ dùng dạng dòng (PostCard variant="row"), nên đếm theo .row__title.
+const perPageCounts = blogPages.map((p) => (p.html.match(/class="row__title"/g) ?? []).length);
 check(
   `Tổng bài trên các trang /blog/ khớp (${mdFiles.length})`,
   perPageCounts.reduce((a, b) => a + b, 0) === mdFiles.length,

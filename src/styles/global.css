@@ -1,54 +1,129 @@
 /* ==========================================================================
-   KcLearnCode — style toàn cục. Tối giản, ưu tiên trải nghiệm đọc.
-   Không tải font từ CDN: dùng font hệ thống để trang tải tức thì và
-   hiển thị tiếng Việt có dấu đúng trên mọi máy.
+   KcLearnCode — "Hai ca làm", bảng màu Nord
+
+   Cùng một người, hai ca. Nhưng thay vì hai palette khác họ, cả hai ca lấy từ MỘT
+   bảng màu: Nord. Ca ngày là Snow Storm, ca đêm là Polar Night, accent là Frost.
+
+   Vì sao Nord chứ không phải "đen + xanh acid" như mọi trang tech: code block của blog
+   này đã dùng Nord từ thời WordPress (xem shikiConfig trong astro.config.mjs). Lấy luôn
+   Nord làm màu cho cả trang thì code block thôi làm vật thể lạ nổi trên nền — nó thành
+   một phần của thiết kế. Với blog của một người đi tìm lỗi, đó là ý IT thật nhất có thể,
+   và nó đến từ chính lịch sử của repo này.
+
+   Mỗi giá trị dưới đây đã đo tương phản, không chọn theo cảm giác. Frost #88c0d0 rất đẹp
+   nhưng chỉ 1.9:1 trên nền sáng nên KHÔNG dùng cho chữ ở ca ngày — ca ngày dùng Frost
+   tối đi.
+
+   Kiểu chữ: IBM Plex Sans + IBM Plex Mono. Tương phản đến từ mono-vs-sans chứ không phải
+   serif-vs-sans — đó là cách phân biệt của giao diện lập trình. Nhãn, ngày, số, năm đều
+   là mono; tiêu đề và nội dung là sans.
    ========================================================================== */
 
 :root {
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-  --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, 'SF Mono', Monaco, 'Courier New', monospace;
+  --font-display: 'IBM Plex Sans Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: var(--font-display);
+  --font-mono: 'IBM Plex Mono', 'Cascadia Code', Consolas, 'SF Mono', Monaco, monospace;
 
-  --width-content: 44rem;
-  --width-wide: 60rem;
+  --width-content: 44rem; /* khung đọc bài — đừng nới, 44rem là độ dài dòng dễ đọc */
+  --width-wide: 68rem; /* khung mosaic ở trang danh sách */
 
-  /* Light theme */
-  --bg: #fffefb;
-  --bg-subtle: #f5f3ee;
-  --bg-code: #f6f8fa;
-  --text: #22201c;
-  --text-muted: #6b665e;
-  --border: #e3ded4;
-  --accent: #b5451b;
-  --accent-hover: #8f3614;
-  --selection: #fde3d3;
+  /* Nút chuyển ca: Nord Frost, và ba giá trị này GIỐNG NHAU ở cả hai ca — đó chính là ý
+     nghĩa của nó, nên đừng dùng ở chỗ khác và đừng đổi theo ca.
+
+     Ba giá trị chứ không phải một, vì một màu không đủ. Tính ra thì không tồn tại màu nào
+     vừa cho chữ trắng đạt 4.5:1 vừa cho chính nó đạt 3:1 với nền tối — hai điều kiện đó
+     loại nhau (cần luminance ≤0.18 và ≥0.21 cùng lúc). Nên chia việc:
+       --shift      nord9, nền nút
+       --shift-ink  nord0, chữ trên nút — 4.64:1, đạt AA cho chữ 12px
+       --shift-edge nord10, viền — 3.93:1 với nền ngày và 3.10:1 với nền đêm, lo phần
+                    ranh giới mà WCAG 1.4.11 đòi, ở cả hai ca */
+  --shift: #81a1c1;
+  --shift-ink: #2e3440;
+  --shift-edge: #5e81ac;
+
+  /* Bo góc nhỏ: giao diện IDE và bảng điều khiển đều dùng góc gần vuông, không phải
+     pill mềm. Ảnh dùng --radius, control dùng --radius-sm cho cạnh sắc hơn. */
+  --radius: 4px;
+  --radius-sm: 3px;
 }
+
+/* ----------------------------------------------------------- ca ngày
+   Nord Snow Storm. Accent tách đôi vì Frost gốc quá nhạt để làm chữ trên nền sáng:
+     --accent-graphic → gạch, thanh, marker (không chứa chữ, không cần đạt 4.5:1)
+     --accent-ink     → chữ link, là Frost đã tối đi cho đạt WCAG AA
+   ------------------------------------------------------------------------- */
+
+:root,
+:root[data-theme='light'] {
+  --bg: #fbfcfe;
+  --bg-subtle: #eceff4; /* nord6 */
+  /* Khối code ở ca ngày để nền TRẮNG, không dùng nord6. Đã đo từng token của github-light:
+     trên nord6 có hai token chỉ ~4.0:1, trên trắng thì tất cả đạt 4.5:1. Khối vẫn là khối vì
+     có viền --border; định danh bằng nét viền thì đúng hơn là bằng màu nền tối đi rồi làm
+     chữ khó đọc. Ca đêm thì ngược lại: nord1 mới tách được khỏi nền trang. */
+  --bg-code: #ffffff;
+  --text: #2e3440; /* nord0 — 12.17:1 */
+  --text-muted: #4c566a; /* nord3 — 7.19:1 */
+  --border: #d0d8e4;
+  --accent-graphic: #5e81ac; /* nord10 */
+  --accent-ink: #4b6a90; /* Frost tối đi — 5.44:1 */
+  --accent-ink-hover: #3d5a7b; /* 6.94:1 */
+  --selection: #d6e3ef;
+}
+
+/* ------------------------------------------------------------ ca đêm
+   Nord Polar Night. Ở đây Frost được là chính nó: #88c0d0 đạt 6.24:1 trên nord0. */
 
 :root[data-theme='dark'] {
-  --bg: #16171a;
-  --bg-subtle: #1e2024;
-  --bg-code: #2e3440; /* nord — khớp theme code block của blog cũ */
-  --text: #e4e2dd;
-  --text-muted: #9b968c;
-  --border: #2f3237;
-  --accent: #f0845c;
-  --accent-hover: #f7a281;
-  --selection: #4a2e22;
+  --bg: #2e3440; /* nord0 */
+  --bg-subtle: #3b4252; /* nord1 */
+  /* Nền code block PHẢI khác nền trang. Theme Shiki `nord` lấy nord0 làm nền, mà nord0
+     giờ chính là nền trang — để nguyên thì code block tan vào trang, không còn nhìn ra
+     đâu là khối code. Nâng lên nord1 để nó là một khối riêng. */
+  --bg-code: #3b4252;
+  --text: #eceff4; /* nord6 — 10.84:1 */
+  --text-muted: #a7b2c6; /* 5.84:1 */
+  --border: #434c5e; /* nord2 */
+  --accent-graphic: #88c0d0; /* nord8 */
+  --accent-ink: #88c0d0; /* 6.24:1 */
+  --accent-ink-hover: #a3d5e2;
+  --selection: #434c5e;
 }
 
-/* Chỉ dùng prefers-color-scheme làm mặc định khi người đọc chưa chọn gì.
-   Script inline trong <head> sẽ gắn data-theme nên biến ở trên luôn thắng. */
+/* Chỉ dùng prefers-color-scheme làm mặc định khi người đọc chưa chọn ca.
+   Script inline trong <head> gắn data-theme nên khối trên luôn thắng. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #16171a;
-    --bg-subtle: #1e2024;
-    --bg-code: #2e3440;
-    --text: #e4e2dd;
-    --text-muted: #9b968c;
-    --border: #2f3237;
-    --accent: #f0845c;
-    --accent-hover: #f7a281;
-    --selection: #4a2e22;
+    --bg: #2e3440;
+    --bg-subtle: #3b4252;
+    --bg-code: #3b4252;
+    --text: #eceff4;
+    --text-muted: #a7b2c6;
+    --border: #434c5e;
+    --accent-graphic: #88c0d0;
+    --accent-ink: #88c0d0;
+    --accent-ink-hover: #a3d5e2;
+    --selection: #434c5e;
+  }
+}
+
+/* -------------------------------------------------------------- chuyển ca
+
+   Class .shifting chỉ được gắn 420ms ngay lúc người đọc bấm nút, rồi bỏ. Cố tình KHÔNG
+   để transition thường trực: như vậy vừa không tốn gì khi cuộn/hover, vừa không nháy màu
+   ở lần vẽ đầu tiên (lúc script trong <head> gắn data-theme). */
+
+:root.shifting * {
+  transition:
+    background-color 420ms ease,
+    border-color 420ms ease,
+    color 420ms ease;
+}
+
+/* Có `*` ở trên nên phải chặn lại ở đây, nếu không thì reduced-motion vẫn thấy animation. */
+@media (prefers-reduced-motion: reduce) {
+  :root.shifting * {
+    transition: none;
   }
 }
 
@@ -75,7 +150,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   font-size: 1.0625rem;
   line-height: 1.75;
   /* Tránh nhảy layout khi chuyển trang có/không có scrollbar */
@@ -97,17 +172,17 @@ img {
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
 }
 
 a:hover {
-  color: var(--accent-hover);
+  color: var(--accent-ink-hover);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-ink);
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -118,13 +193,27 @@ a:hover {
   left: -9999px;
   top: 0;
   padding: 0.5rem 1rem;
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent-ink);
+  color: var(--bg);
   z-index: 100;
 }
 
 .skip-link:focus {
   left: 0;
+}
+
+/* Chữ chỉ screen reader đọc, mắt không thấy. Dùng cho phần bổ nghĩa mà giao diện đã nói
+   bằng hình (vd nút chuyển ca: mắt thấy "Ca ngày", tai cần biết bấm vào thì xảy ra gì). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* --------------------------------------------------------------- layout */
@@ -146,6 +235,39 @@ a:hover {
   padding-block: 2.5rem 4rem;
 }
 
+/* ----------------------------------------------------------- nhãn meta
+
+   Ngày và category là mono. Đây là chỗ tương phản kiểu chữ của cả trang: mọi thứ đo đếm
+   được — ngày, số bài, năm, số trang — đều là mono; mọi thứ để đọc đều là sans. Nhìn vào
+   là biết ngay cái nào là dữ liệu, cái nào là nội dung. */
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.meta a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.meta a:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
+}
+
+.meta__sep {
+  color: var(--border);
+}
+
 /* --------------------------------------------------------------- header */
 
 .site-header {
@@ -161,22 +283,38 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 1rem;
-  min-height: 3.75rem;
+  min-height: 4rem;
   flex-wrap: wrap;
 }
 
+/* Masthead. Ở ca đêm nó nhẹ đi một bậc và giãn tracking — chữ mảnh trên nền tối trông
+   dày hơn thực tế nên hạ weight là để nó CÙNG một độ đậm thị giác ở hai ca, không phải
+   để trang trí. Cùng một file font (trục wght của Plex Sans variable), 0 byte thêm. */
 .site-title {
-  font-weight: 700;
-  font-size: 1.0625rem;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
   color: var(--text);
   text-decoration: none;
   margin-right: auto;
   white-space: nowrap;
 }
 
+:root[data-theme='dark'] .site-title {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .site-title {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+}
+
 .site-title:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .site-nav {
@@ -200,63 +338,83 @@ a:hover {
   font-weight: 600;
 }
 
-/* ---------------------------------------------------------- theme toggle */
+/* ------------------------------------------------------- nút chuyển ca
 
-.theme-toggle {
-  display: inline-grid;
-  place-items: center;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-muted);
+   Vật duy nhất thuộc cả hai ca: tô đặc Nord Frost #5e81ac, giống nhau ở ngày và đêm.
+   Nhãn là mono — cùng lớp kiểu chữ với ngày tháng và số, vì đây cũng là một trạng thái
+   đọc được chứ không phải một câu văn. Góc gần vuông, không phải pill mềm. */
+
+.shift-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--shift-edge);
+  border-radius: var(--radius-sm);
+  background: var(--shift);
+  color: var(--shift-ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1;
   cursor: pointer;
   flex-shrink: 0;
 }
 
-.theme-toggle:hover {
-  color: var(--text);
-  border-color: var(--text-muted);
+/* Hover thêm một vòng Frost nhạt quanh nút, không đổi màu nền — đổi nền là phải tính lại
+   tương phản chữ cho cả hai ca, mà chẳng được thêm gì. */
+.shift-toggle:hover {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--shift) 35%, transparent);
 }
 
-.theme-toggle svg {
-  width: 1rem;
-  height: 1rem;
+.shift-toggle svg {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: currentcolor;
+  flex-shrink: 0;
 }
 
-/* Chỉ hiện icon tương ứng theme đang bật */
-.theme-toggle .icon-sun {
+/* `display: contents` để icon và nhãn ăn trực tiếp gap của button, không bị bọc thêm một lớp.
+   Chỉ hiện cụm của ca đang bật; đổi ca là CSS lo, không cần JS dựng lại nội dung nút. */
+.shift-toggle .is-day,
+.shift-toggle .is-night {
+  display: contents;
+}
+
+.shift-toggle .is-night {
   display: none;
 }
 
-:root[data-theme='dark'] .theme-toggle .icon-sun {
-  display: block;
+:root[data-theme='dark'] .shift-toggle .is-night {
+  display: contents;
 }
 
-:root[data-theme='dark'] .theme-toggle .icon-moon {
+:root[data-theme='dark'] .shift-toggle .is-day {
   display: none;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .theme-toggle .icon-sun {
-    display: block;
+  :root:not([data-theme]) .shift-toggle .is-night {
+    display: contents;
   }
-  :root:not([data-theme]) .theme-toggle .icon-moon {
+  :root:not([data-theme]) .shift-toggle .is-day {
     display: none;
   }
 }
 
-/* --------------------------------------------------------- danh sách bài */
+/* ---------------------------------------------------------- lời mở trang */
 
 .page-intro {
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
 }
 
 .page-intro h1 {
-  font-size: 1.75rem;
-  line-height: 1.3;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.875rem, 4vw, 2.5rem);
+  line-height: 1.15;
   letter-spacing: -0.02em;
   margin: 0 0 0.5rem;
 }
@@ -264,7 +422,236 @@ a:hover {
 .page-intro p {
   color: var(--text-muted);
   margin: 0;
+  max-width: 44rem;
 }
+
+/* --------------------------------------------------------- bài dẫn
+
+   Trang chủ: ảnh hero rộng bên trái, cột chủ đề bên phải. Dưới 56rem thì cột chủ đề
+   xuống dưới — thứ tự trong DOM đã là bài trước / chủ đề sau nên không cần đảo order. */
+
+.masthead {
+  display: grid;
+  gap: 2rem 2.5rem;
+  margin-bottom: 3.5rem;
+}
+
+@media (min-width: 56rem) {
+  .masthead {
+    grid-template-columns: minmax(0, 1fr) 15rem;
+    align-items: start;
+  }
+}
+
+/* ------------------------------------------------- câu giới thiệu trang chủ
+
+   Một dòng chạy ngang phía trên bài dẫn: h1 (đúng cấu trúc heading) nhưng cỡ nhỏ, để chữ
+   to duy nhất trên trang là tiêu đề bài mới nhất. */
+
+.thesis {
+  display: grid;
+  gap: 0.375rem 2rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+@media (min-width: 48rem) {
+  .thesis {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+  }
+}
+
+.thesis__line {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.thesis__note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  max-width: 34rem;
+}
+
+.lead__figure {
+  display: block;
+  margin: 0 0 1.25rem;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+}
+
+.lead__figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lead__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.875rem, 4.5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  margin: 0.625rem 0 0.75rem;
+  overflow-wrap: break-word;
+}
+
+.lead__title a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.lead__title a:hover {
+  color: var(--accent-ink);
+}
+
+.lead__desc {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 36rem;
+}
+
+/* ----------------------------------------------------- cột chủ đề
+
+   Số đếm là số thật, lấy từ categories của bài — cùng logic với trang /categories/. */
+
+.cat-panel {
+  margin: 0;
+}
+
+.cat-panel__heading {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.cat-panel__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cat-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.9375rem;
+}
+
+.cat-line:hover {
+  color: var(--accent-ink);
+}
+
+/* Đường nối chấm giữa tên chủ đề và số đếm — mắt lần theo được sang đúng con số */
+.cat-line__rule {
+  flex: 1;
+  border-bottom: 1px dotted var(--border);
+  transform: translateY(-0.25em);
+}
+
+.cat-line__count {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.cat-panel__all {
+  display: inline-block;
+  margin-top: 0.875rem;
+  font-size: 0.875rem;
+}
+
+/* ---------------------------------------------------------- mosaic ô */
+
+.mosaic {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2.25rem 1.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 34rem) {
+  .mosaic {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 56rem) {
+  .mosaic {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tile__figure {
+  display: block;
+  margin: 0 0 0.875rem;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+}
+
+.tile__figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tile__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  margin: 0.4375rem 0 0.375rem;
+  overflow-wrap: break-word;
+}
+
+.tile__title a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.tile__title a:hover {
+  color: var(--accent-ink);
+}
+
+.tile__desc {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* ------------------------------------------------------- dòng danh sách
+
+   /blog/ và /categories/<x>/ dùng dạng dòng, không dùng mosaic: 29 bài trải 11 năm
+   thì việc quét nhanh quan trọng hơn việc ngắm ảnh. */
 
 .post-list {
   list-style: none;
@@ -272,66 +659,100 @@ a:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2.25rem;
+  /* Khung trang là 68rem cho đủ chỗ mosaic, nhưng dòng danh sách toàn chữ thì 68rem là
+     dòng quá dài để đọc. Hãm riêng danh sách lại, không phải hãm cả trang (header và
+     footer vẫn cần thẳng hàng với các trang khác). */
+  max-width: 54rem;
 }
 
-.post-card__meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  margin-bottom: 0.25rem;
+/* Mặc định (mobile) xếp dọc: ở 360px mà chia hai cột thì cột chữ chỉ còn ~180px, tiêu đề
+   vỡ bốn dòng. Có đủ chỗ rồi mới cho ảnh sang bên trái. */
+.row {
+  display: grid;
+  gap: 0.875rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border);
 }
 
-.post-card__meta a {
-  color: var(--text-muted);
-  text-decoration: none;
+@media (min-width: 34rem) {
+  .row {
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 1.25rem;
+  }
 }
 
-.post-card__meta a:hover {
-  color: var(--accent);
-  text-decoration: underline;
+.post-list > .row:first-child {
+  padding-top: 0;
 }
 
-.post-card__title {
-  font-size: 1.1875rem;
-  line-height: 1.4;
-  letter-spacing: -0.01em;
-  margin: 0 0 0.375rem;
+.row__figure {
+  display: block;
+  margin: 0;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
 }
 
-.post-card__title a {
+.row__figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.row__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  margin: 0.3125rem 0 0.3125rem;
+  overflow-wrap: break-word;
+}
+
+.row__title a {
   color: var(--text);
   text-decoration: none;
 }
 
-.post-card__title a:hover {
-  color: var(--accent);
+.row__title a:hover {
+  color: var(--accent-ink);
 }
 
-.post-card__desc {
+.row__desc {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.9375rem;
-  line-height: 1.65;
+  line-height: 1.6;
 }
 
-/* Nhóm bài theo năm */
+/* Nhóm bài theo năm. Mono, vì năm là một con số — cùng lớp kiểu chữ với ngày và số trang.
+   Có thêm một vạch Frost ngắn phía trước để mốc năm bắt mắt khi cuộn qua 11 năm bài. */
 .year-heading {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-family: var(--font-mono);
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   color: var(--text-muted);
-  margin: 0 0 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
+  margin: 0 0 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.year-heading::before {
+  content: '';
+  width: 1.5rem;
+  height: 2px;
+  background: var(--accent-graphic);
+  flex-shrink: 0;
 }
 
 .year-group + .year-group {
-  margin-top: 3.5rem;
+  margin-top: 3rem;
 }
 
 /* ---------------------------------------------------------- phân trang */
@@ -342,7 +763,7 @@ a:hover {
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
-  margin-top: 3.5rem;
+  margin-top: 3rem;
   padding-top: 1.75rem;
   border-top: 1px solid var(--border);
 }
@@ -369,12 +790,14 @@ a:hover {
   min-height: 2.25rem;
   padding: 0 0.625rem;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
   line-height: 1;
   text-decoration: none;
   color: var(--text);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .pagination__step {
@@ -388,14 +811,14 @@ a:hover {
 
 a.pagination__num:hover,
 a.pagination__step:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
 }
 
 .pagination__num--current {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+  background: var(--accent-graphic);
+  border-color: var(--accent-graphic);
+  color: var(--bg);
   font-weight: 600;
 }
 
@@ -421,7 +844,7 @@ a.pagination__step:hover {
 
 /* Liên kết "Bài cũ hơn →" ở cuối trang chủ */
 .more-link-wrap {
-  margin-top: 3.5rem;
+  margin-top: 3rem;
   padding-top: 1.75rem;
   border-top: 1px solid var(--border);
   text-align: center;
@@ -433,16 +856,23 @@ a.pagination__step:hover {
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 0.9375rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
   font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   text-decoration: none;
   color: var(--text);
 }
 
 .more-link:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--bg-subtle);
+}
+
+.more-link:hover {
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
 }
 
 .more-link span {
@@ -461,22 +891,25 @@ a.pagination__step:hover {
 
 /* ------------------------------------------------------------ tag / chip */
 
+/* Tag: mono, góc gần vuông. Trong markdown nó hiện dạng `#tag` nên để pill tròn mềm là
+   sai chất — đây là một nhãn kỹ thuật, không phải một nhãn dán. */
 .chip {
   display: inline-block;
-  padding: 0.125rem 0.5rem;
+  padding: 0.1875rem 0.5rem;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: var(--bg-subtle);
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  line-height: 1.5;
+  line-height: 1.4;
   color: var(--text-muted);
   text-decoration: none;
   white-space: nowrap;
 }
 
 .chip:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent-ink);
 }
 
 .chip-row {
@@ -495,28 +928,32 @@ a.pagination__step:hover {
 }
 
 .post-header h1 {
-  font-size: 2rem;
-  line-height: 1.25;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.1;
   letter-spacing: -0.025em;
   margin: 0.5rem 0 0.75rem;
   overflow-wrap: break-word;
 }
 
-.post-header__meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-}
-
+/* Ảnh hero trong trang bài hiện NGUYÊN KHUNG, không cắt 16:9 như ô mosaic: ở đây ảnh là
+   nội dung của tác giả. Có bài ảnh dạng dọc 988×2048, cắt là làm hỏng hẳn.
+   width/height do PostLayout đặt từ manifest nên không nhảy layout; max-height chặn lại để
+   ảnh dọc không đẩy hết bài xuống dưới màn hình. */
 .post-hero {
-  width: 100%;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  margin-bottom: 2.5rem;
   display: block;
+  /* width/height auto + hai giới hạn max: trình duyệt tự giữ đúng tỷ lệ theo cái nào chặn
+     trước, không bị méo. Phải ghi cả `height: auto` vì `img { height: auto }` ở trên chỉ
+     đúng khi có mỗi max-width. */
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 32rem;
+  margin: 0 auto 2.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
 }
 
 /* ---------------- nội dung markdown ---------------- */
@@ -525,36 +962,37 @@ a.pagination__step:hover {
   margin-top: 0;
 }
 
+.prose h1,
 .prose h2,
 .prose h3,
 .prose h4,
 .prose h5,
 .prose h6 {
-  line-height: 1.35;
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.25;
   letter-spacing: -0.015em;
   margin: 2.5rem 0 0.75rem;
   overflow-wrap: break-word;
   /* để anchor link không bị header sticky che mất */
-  scroll-margin-top: 5rem;
+  scroll-margin-top: 5.5rem;
 }
 
 .prose h2 {
-  font-size: 1.4375rem;
+  font-size: 1.75rem;
 }
 .prose h3 {
-  font-size: 1.1875rem;
+  font-size: 1.375rem;
 }
 .prose h4,
 .prose h5,
 .prose h6 {
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
 }
 
 /* Bài cũ từ WordPress dùng h1 trong nội dung — hạ cỡ để không cạnh tranh với tiêu đề bài */
 .prose h1 {
-  font-size: 1.5rem;
-  line-height: 1.3;
-  margin: 2.5rem 0 0.75rem;
+  font-size: 1.875rem;
 }
 
 .prose p,
@@ -575,7 +1013,7 @@ a.pagination__step:hover {
 .prose img {
   display: block;
   margin: 1.75rem auto;
-  border-radius: 8px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
 }
 
@@ -589,10 +1027,12 @@ a.pagination__step:hover {
   margin-bottom: 1.75rem;
 }
 
+/* Không phóng to chữ trong blockquote nữa: với sans thì cỡ to chỉ ra "chữ body bị to lên",
+   khác với serif. Để một vạch Frost làm dấu, còn lại giữ đúng nhịp đọc của bài. */
 .prose blockquote {
   margin: 1.75rem 0;
   padding: 0.25rem 0 0.25rem 1.25rem;
-  border-left: 3px solid var(--accent);
+  border-left: 2px solid var(--accent-graphic);
   color: var(--text-muted);
 }
 
@@ -634,7 +1074,7 @@ a.pagination__step:hover {
   display: block;
   margin: 1.75rem 0;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--bg-subtle);
 }
 
@@ -644,7 +1084,7 @@ a.pagination__step:hover {
   font-family: var(--font-mono);
   font-size: 0.875em;
   padding: 0.15em 0.4em;
-  border-radius: 4px;
+  border-radius: 3px;
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   overflow-wrap: break-word;
@@ -655,7 +1095,7 @@ a.pagination__step:hover {
   font-size: 0.84375rem;
   line-height: 1.6;
   padding: 1rem 1.125rem;
-  border-radius: 8px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   overflow-x: auto;
   margin: 1.75rem 0;
@@ -669,25 +1109,31 @@ a.pagination__step:hover {
   padding: 0;
 }
 
-/* Shiki chạy 2 theme (github-light + nord) với defaultColor:false, nên phải tự
-   chọn bộ biến màu theo data-theme. Không làm bước này thì code block sẽ không có màu. */
+/* Shiki chạy 2 theme (github-light + nord) với defaultColor:false, nên phải tự chọn bộ
+   biến màu theo data-theme. Không làm bước này thì code block sẽ không có màu.
+
+   Chỉ lấy MÀU CHỮ của Shiki, còn màu nền thì dùng --bg-code của trang. Lý do: theme `nord`
+   lấy nord0 làm nền, mà nord0 giờ chính là nền trang ở ca đêm — dùng --shiki-dark-bg là
+   khối code biến mất khỏi trang. Lấy nền của mình thì code block luôn là một khối rõ ràng,
+   và vì bảng màu cả trang cũng là Nord nên nó nằm đúng trong thiết kế chứ không lạc ra. */
+.prose pre {
+  background-color: var(--bg-code);
+}
+
 .astro-code,
 .astro-code span {
   color: var(--shiki-light);
-  background-color: var(--shiki-light-bg);
 }
 
 :root[data-theme='dark'] .astro-code,
 :root[data-theme='dark'] .astro-code span {
   color: var(--shiki-dark);
-  background-color: var(--shiki-dark-bg);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) .astro-code,
   :root:not([data-theme]) .astro-code span {
     color: var(--shiki-dark);
-    background-color: var(--shiki-dark-bg);
   }
 }
 
@@ -711,26 +1157,32 @@ a.pagination__step:hover {
   display: block;
   padding: 0.875rem 1rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
   color: var(--text);
 }
 
 .post-nav__link:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-graphic);
+  background: var(--bg-subtle);
 }
 
 .post-nav__label {
   display: block;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: var(--text-muted);
   margin-bottom: 0.25rem;
 }
 
 .post-nav__title {
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
 }
 
 .post-nav__link--next {
@@ -759,41 +1211,21 @@ a.pagination__step:hover {
 }
 
 .site-footer a:hover {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
-/* ------------------------------------------------------- trang category */
+/* ------------------------------------------------------- trang /categories/
 
-.category-grid {
+   Dùng lại .cat-line của cột chủ đề ở trang chủ, chỉ đổi cách xếp thành nhiều cột. */
+
+.cat-columns {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-}
-
-.category-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.875rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  text-decoration: none;
-  color: var(--text);
-}
-
-.category-card:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.category-card__count {
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  flex-shrink: 0;
+  gap: 0 2.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  max-width: 54rem;
 }
 
 /* ---------------------------------------------------------------- 404 */
@@ -803,8 +1235,12 @@ a.pagination__step:hover {
   padding-block: 4rem;
 }
 
+/* 404 là một mã trạng thái HTTP, không phải một tiêu đề — nên đặt bằng mono. */
 .notfound h1 {
-  font-size: 4rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 4.5rem;
   margin: 0;
-  letter-spacing: -0.04em;
+  letter-spacing: 0.02em;
+  color: var(--accent-graphic);
 }
