@@ -19,7 +19,9 @@ interface Props {
 const { title, description = SITE.description, image, type = 'website', publishedTime, wide = false } = Astro.props;
 
 const pageTitle = title === SITE.title ? title : `${title} — ${SITE.title}`;
-const canonical = new URL(Astro.url.pathname.replace(/\/+$/, '') || '/', Astro.site);
+// Chuẩn hoá về dạng CÓ dấu / ở cuối để khớp URL mà Cloudflare Workers thực sự trả về
+// (host redirect 307 các URL không có dấu /). Canonical trỏ tới URL bị redirect là sai SEO.
+const canonical = new URL(Astro.url.pathname.replace(/\/*$/, '/'), Astro.site);
 const ogImage = image ? new URL(image, Astro.site) : undefined;
 ---
 

@@ -1,7 +1,17 @@
 # KcLearnCode
 
+**🌐 https://kclearncode.khanhcuong-hanu.workers.dev**
+
 Blog cá nhân, chạy bằng [Astro](https://astro.build). Toàn bộ 30 bài viết đã chuyển từ
-WordPress (`kclearncode.com`) sang đây. Hosting miễn phí trên Cloudflare Pages — **chi phí 0đ**.
+WordPress (`kclearncode.com`) sang đây. Hosting miễn phí trên Cloudflare Workers — **chi phí 0đ**.
+
+| | |
+|---|---|
+| Site | https://kclearncode.khanhcuong-hanu.workers.dev |
+| Repo | https://github.com/cuongtruongkhanh/kclearncode |
+| Hosting | Cloudflare Workers (Static Assets), deploy tự động khi push lên `main` |
+| RSS | https://kclearncode.khanhcuong-hanu.workers.dev/rss.xml |
+| Sitemap | https://kclearncode.khanhcuong-hanu.workers.dev/sitemap-index.xml |
 
 ---
 
@@ -65,7 +75,7 @@ git commit -m "post: cach viet test tot hon"
 git push
 ```
 
-Cloudflare Pages tự build và deploy, khoảng 30 giây sau là bài lên site.
+Cloudflare tự build và deploy, khoảng 30–60 giây sau là bài lên site.
 
 ### Code block
 
@@ -90,7 +100,7 @@ Ngôn ngữ dùng được: `javascript`, `typescript`, `python`, `java`, `cshar
 | `npm run build` | Build ra thư mục `dist/` |
 | `npm run preview` | Xem thử bản đã build (giống production nhất) |
 | `npm run check` | Kiểm tra lỗi TypeScript và frontmatter sai kiểu |
-| `npm run verify` | 43 phép kiểm tra tự động (chạy **sau** `npm run build`) |
+| `npm run verify` | 46 phép kiểm tra tự động (chạy **sau** `npm run build`) |
 | `npm run backup` | Tải lại dữ liệu thô từ WordPress cũ (chỉ dùng khi site cũ còn sống) |
 | `npm run migrate` | Dựng lại toàn bộ `.md` từ `_backup/raw-json/` — **ghi đè hết bài đã sửa tay** |
 | `npm run images` | Tải ảnh còn thiếu về local, chạy lại được nhiều lần |
@@ -107,6 +117,7 @@ src/
   content/posts/       30 bài viết dạng Markdown
   content.config.ts    Schema frontmatter (sai kiểu là build fail ngay)
   consts.ts            Tên site, menu, hàm slug hoá & format ngày
+  ../astro.config.mjs  ⚠️ Domain của site (`site:`) — sinh canonical/sitemap/RSS
   layouts/             BaseLayout (SEO, theme), PostLayout (bài viết)
   components/          Header, Footer, PostCard, ThemeToggle
   pages/               Các route: /, /blog, /posts/…, /categories/…, /rss.xml, /404
@@ -145,47 +156,57 @@ ghi chú đó thành `![alt](/images/posts/python-tu-khong-den-co/anh-moi.png)`.
 
 ---
 
-## Deploy lên Cloudflare Pages
+## Deploy
 
-Làm một lần duy nhất:
+**Đã setup xong rồi** — site đang chạy tại
+https://kclearncode.khanhcuong-hanu.workers.dev, host trên **Cloudflare Workers**
+(Static Assets) và kết nối trực tiếp với repo GitHub.
 
-**1. Đẩy code lên GitHub**
+Từ giờ quy trình đăng bài chỉ là:
 
 ```powershell
-git init
-git add .
-git commit -m "Chuyen blog tu WordPress sang Astro"
-git branch -M main
-git remote add origin https://github.com/<tai-khoan>/kclearncode.git
-git push -u origin main
+git push
 ```
 
-**2. Tạo project trên Cloudflare**
+Cloudflare tự chạy `npm run build` rồi deploy thư mục `dist/`. HTTPS đã bật sẵn.
+Xem tiến độ build ở https://dash.cloudflare.com → **Workers & Pages** → `kclearncode`.
 
-1. Vào https://dash.cloudflare.com → **Workers & Pages** → **Create** → **Pages** →
-   **Connect to Git**
-2. Chọn repo vừa đẩy lên
-3. Điền cấu hình build:
-   - Framework preset: **Astro**
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-4. Project name: `kclearncode` → site sẽ ở `https://kclearncode.pages.dev`
-5. Bấm **Save and Deploy**
+### Cấu hình build trên Cloudflare
 
-HTTPS bật tự động, không cần cấu hình gì thêm. Từ giờ mỗi lần `git push` lên `main` là
-site tự build lại; mỗi Pull Request có URL xem trước riêng.
+Nếu cần tạo lại project (hoặc kiểm tra lại cấu hình hiện tại):
 
-**3. Nếu sau này đổi tên miền**
+- Build command: `npm run build`
+- Deploy / output directory: `dist`
+- Không cần biến môi trường nào
 
-Sửa `site` trong [astro.config.mjs](astro.config.mjs) — giá trị này dùng để sinh
-canonical URL, sitemap và RSS, để sai là SEO sai.
+### ⚠️ Nếu đổi tên miền
 
-**4. Đăng ký Google Search Console**
+Phải sửa `site` trong [astro.config.mjs](astro.config.mjs):
+
+```js
+site: 'https://kclearncode.khanhcuong-hanu.workers.dev',
+```
+
+Giá trị này sinh ra **canonical URL, sitemap và link trong RSS**. Đặt sai là Google được
+chỉ sang một địa chỉ không tồn tại — đúng lỗi đã xảy ra khi site còn ghi `kclearncode.pages.dev`.
+Sửa xong nhớ chạy `npm run build && npm run verify`, đã có 4 phép kiểm tra bắt lỗi này.
+
+### Về dấu `/` ở cuối URL
+
+Cloudflare Workers redirect 307 mọi URL thiếu dấu `/` (ví dụ `/blog` → `/blog/`), và
+tự bỏ đuôi `.html`. Vì vậy dự án đặt `trailingSlash: 'always'` và **mọi link nội bộ đều
+có dấu `/` ở cuối** — nếu viết thiếu, mỗi lần bấm sẽ tốn thêm một vòng request.
+
+Riêng iframe của 2 bài game vẫn trỏ `/games/<ten>.html` (có đuôi): bản local bắt buộc
+phải có `.html`, còn trên Workers thì URL này 307 sang bản không đuôi. Chạy đúng ở cả hai nơi.
+
+### Google Search Console
 
 Vì đã bỏ tên miền `kclearncode.com`, Google phải index lại từ đầu:
 
-1. Vào https://search.google.com/search-console → thêm property `kclearncode.pages.dev`
-2. Submit sitemap: `https://kclearncode.pages.dev/sitemap-index.xml`
+1. Vào https://search.google.com/search-console → thêm property
+   `kclearncode.khanhcuong-hanu.workers.dev`
+2. Submit sitemap: `https://kclearncode.khanhcuong-hanu.workers.dev/sitemap-index.xml`
 
 Nhớ cập nhật link blog ở profile GitHub, LinkedIn, Facebook, chữ ký email.
 

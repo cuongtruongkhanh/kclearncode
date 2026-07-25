@@ -43,6 +43,11 @@ if (!existsSync(DIST)) {
   process.exit(1);
 }
 
+// Đọc domain từ astro.config.mjs thay vì viết cứng ở đây — nếu không, đổi domain là
+// phép kiểm tra canonical bên dưới sẽ so với địa chỉ cũ và báo đạt một cách sai lệch.
+const { default: astroConfig } = await import('../astro.config.mjs');
+const SITE_URL = astroConfig.site.replace(/\/+$/, '');
+
 const wpPosts = JSON.parse(await readFile(join(RAW, 'posts.json'), 'utf8'));
 const mdFiles = (await readdir(POSTS)).filter((f) => f.endsWith('.md'));
 const mdSources = new Map();
@@ -230,15 +235,23 @@ for (const [f, src] of mdSources) {
 }
 check('Mọi bài đều có title và description hợp lệ', badMeta.length === 0, badMeta.join('\n      '));
 
-// Mọi trang bài đều có canonical trỏ đúng domain
+// Mọi trang bài đều có canonical trỏ đúng domain, và phải có dấu / ở cuối để khớp
+// URL mà Cloudflare Workers thực sự trả về (host redirect 307 URL thiếu dấu /).
 const badCanonical = [];
+const badSlash = [];
 for (const f of postPages) {
   const html = await readFile(f, 'utf8');
-  if (!/<link rel="canonical" href="https:\/\/kclearncode\.pages\.dev\//.test(html)) {
-    badCanonical.push(relative(DIST, f));
-  }
+  const m = html.match(/<link rel="canonical" href="([^"]+)"/);
+  if (!m || !m[1].startsWith(`${SITE_URL}/`)) badCanonical.push(relative(DIST, f));
+  else if (!m[1].endsWith('/')) badSlash.push(m[1]);
 }
-check('Mọi trang bài đều có canonical đúng domain', badCanonical.length === 0, badCanonical.slice(0, 5).join(', '));
+check(`Mọi trang bài có canonical đúng domain (${SITE_URL})`, badCanonical.length === 0, badCanonical.slice(0, 5).join(', '));
+check('Canonical có dấu / ở cuối, khớp URL host trả về', badSlash.length === 0, badSlash.slice(0, 3).join(', '));
+
+// Sitemap và RSS cũng phải dùng domain thật, không phải domain cũ
+const sitemap = await readFile(join(DIST, 'sitemap-0.xml'), 'utf8').catch(() => '');
+check('Sitemap dùng domain thật', sitemap.includes(`<loc>${SITE_URL}/`), 'sitemap còn trỏ domain cũ');
+check('RSS dùng domain thật', (await readFile(join(DIST, 'rss.xml'), 'utf8')).includes(SITE_URL));
 
 // ------------------------------------------------------- 8. Dung lượng
 console.log('\n[8] Dung lượng');
@@ -246,15 +259,15 @@ console.log('\n[8] Dung lượng');
 let totalBytes = 0;
 for (const f of distFiles) totalBytes += (await stat(f)).size;
 const mb = totalBytes / 1024 / 1024;
-check(`Tổng dung lượng site: ${mb.toFixed(1)} MB (dưới hạn 25 MB/file của Cloudflare Pages)`, mb < 500);
+check(`Tổng dung lượng site: ${mb.toFixed(1)} MB`, mb < 500);
 
 const bigFiles = [];
 for (const f of distFiles) {
   const size = (await stat(f)).size;
   if (size > 25 * 1024 * 1024) bigFiles.push(`${relative(DIST, f)} (${(size / 1024 / 1024).toFixed(1)} MB)`);
 }
-check('Không file nào vượt 25 MB (giới hạn mỗi file của Cloudflare Pages)', bigFiles.length === 0, bigFiles.join(', '));
-check(`Số file tổng cộng: ${distFiles.length} (giới hạn 20.000 file của Cloudflare Pages)`, distFiles.length < 20000);
+check('Không file nào vượt 25 MB (giới hạn mỗi file của Cloudflare)', bigFiles.length === 0, bigFiles.join(', '));
+check(`Số file tổng cộng: ${distFiles.length} (giới hạn 20.000 file của Cloudflare)`, distFiles.length < 20000);
 
 // ------------------------------------------------------- Kết luận
 console.log(`\n${'─'.repeat(64)}`);

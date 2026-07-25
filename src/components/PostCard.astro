@@ -20,12 +20,12 @@ const { slug, title, description, pubDate, categories } = Astro.props;
         <>
           <span aria-hidden="true">·</span>
           {categories.map((cat) => (
-            <a href={`/categories/${categorySlug(cat)}`}>{cat}</a>
+            <a href={`/categories/${categorySlug(cat)}/`}>{cat}</a>
           ))}
         </>
       )
     }
   </div>
-  <h2 class="post-card__title"><a href={`/posts/${slug}`}>{title}</a></h2>
+  <h2 class="post-card__title"><a href={`/posts/${slug}/`}>{title}</a></h2>
   <p class="post-card__desc">{description}</p>
 </li>

@@ -37,7 +37,7 @@ const { name, posts } = Astro.props as Props;
 <BaseLayout title={`Chủ đề: ${name}`} description={`${posts.length} bài viết thuộc chủ đề ${name} trên KcLearnCode.`}>
   <div class="page-intro">
     <h1>{name}</h1>
-    <p>{posts.length} bài viết · <a href="/categories">xem tất cả chủ đề</a></p>
+    <p>{posts.length} bài viết · <a href="/categories/">xem tất cả chủ đề</a></p>
   </div>
 
   <ul class="post-list">

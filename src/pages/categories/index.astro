@@ -22,7 +22,7 @@ const categories = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].loca
     {
       categories.map(([name, count]) => (
         <li>
-          <a class="category-card" href={`/categories/${categorySlug(name)}`}>
+          <a class="category-card" href={`/categories/${categorySlug(name)}/`}>
             <span>{name}</span>
             <span class="category-card__count">{count} bài</span>
           </a>

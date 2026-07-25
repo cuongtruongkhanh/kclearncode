@@ -2,12 +2,15 @@
 import { SITE, NAV } from '../consts';
 import ThemeToggle from './ThemeToggle.astro';
 
-const path = Astro.url.pathname.replace(/\/+$/, '') || '/';
+/** Bỏ dấu / ở cuối để so sánh — href trong NAV có dấu /, pathname thì tuỳ URL người đọc gõ. */
+const trim = (p: string) => p.replace(/\/+$/, '') || '/';
+const path = trim(Astro.url.pathname);
 
 /** Mục nav được coi là "đang xem" khi đúng đường dẫn, hoặc là trang cha của đường dẫn hiện tại. */
 function isCurrent(href: string): boolean {
-  if (href === '/') return path === '/';
-  return path === href || path.startsWith(`${href}/`);
+  const target = trim(href);
+  if (target === '/') return path === '/';
+  return path === target || path.startsWith(`${target}/`);
 }
 ---
 

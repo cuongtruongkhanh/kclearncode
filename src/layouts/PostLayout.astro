@@ -38,7 +38,7 @@ const {
           categories.map((cat) => (
             <>
               <span aria-hidden="true">·</span>
-              <a href={`/categories/${categorySlug(cat)}`}>{cat}</a>
+              <a href={`/categories/${categorySlug(cat)}/`}>{cat}</a>
             </>
           ))
         }
@@ -70,7 +70,7 @@ const {
     (prev || next) && (
       <nav class="post-nav" aria-label="Bài trước và bài sau">
         {prev ? (
-          <a class="post-nav__link" href={`/posts/${prev.slug}`}>
+          <a class="post-nav__link" href={`/posts/${prev.slug}/`}>
             <span class="post-nav__label">← Bài trước</span>
             <span class="post-nav__title">{prev.title}</span>
           </a>
@@ -78,7 +78,7 @@ const {
           <span />
         )}
         {next && (
-          <a class="post-nav__link post-nav__link--next" href={`/posts/${next.slug}`}>
+          <a class="post-nav__link post-nav__link--next" href={`/posts/${next.slug}/`}>
             <span class="post-nav__label">Bài sau →</span>
             <span class="post-nav__title">{next.title}</span>
           </a>

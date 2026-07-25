@@ -11,11 +11,13 @@ export const SITE = {
 // "About Me" trỏ thẳng vào bài viết gốc năm 2015 thay vì tạo một trang /about trùng
 // nội dung — một URL chuẩn duy nhất, tốt cho SEO. /about chỉ là alias redirect,
 // khai báo trong astro.config.mjs.
+// Mọi href nội bộ có dấu / ở cuối để khớp `trailingSlash: 'always'` — nếu thiếu,
+// Cloudflare Workers redirect 307, tốn thêm một vòng request mỗi lần bấm.
 export const NAV = [
   { href: '/', label: 'Trang chủ' },
-  { href: '/blog', label: 'Blog' },
-  { href: '/categories', label: 'Chủ đề' },
-  { href: '/posts/about-me', label: 'About Me' },
+  { href: '/blog/', label: 'Blog' },
+  { href: '/categories/', label: 'Chủ đề' },
+  { href: '/posts/about-me/', label: 'About Me' },
 ] as const;
 
 /** Slug hoá tên category tiếng Việt để làm URL (vd "C#" → "c-sharp"). */
