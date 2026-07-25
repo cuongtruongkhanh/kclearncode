@@ -1,3 +1,19 @@
+/**
+ * Mã xác thực Google Search Console (thẻ meta). Để chuỗi rỗng là không render thẻ.
+ *
+ * Vì sao phải dùng thẻ meta chứ không dùng hai cách kia:
+ *  - DNS TXT: không được, `workers.dev` là tên miền của Cloudflare, mình không có quyền
+ *    thêm record. Đây cũng là lý do KHÔNG chọn "Domain property" trong Search Console.
+ *  - Tải file googleXXXX.html: không được, Cloudflare Workers redirect 307 mọi URL `.html`
+ *    còn Google thì cần đúng đường dẫn đó trả về 200.
+ *
+ * Lấy mã ở: Search Console → thêm property dạng **URL prefix** với
+ * `https://kclearncode.khanhcuong-hanu.workers.dev/` → chọn cách "HTML tag".
+ */
+// ⚠️ Google nói rõ: KHÔNG được xoá thẻ này kể cả sau khi đã xác thực thành công.
+// Xoá đi là mất quyền truy cập Search Console. Có phép kiểm tra trong scripts/verify.mjs canh việc này.
+export const GOOGLE_SITE_VERIFICATION = 'VO1tkVf813xokFgCqSWTuucN9A8-IGQrzkcO7w1kf_c';
+
 /** Thông tin chung của site — sửa ở đây là đổi mọi nơi. */
 export const SITE = {
   title: 'KcLearnCode',

@@ -255,6 +255,24 @@ console.log('\n[7] Tiếng Việt và SEO');
 
 const home = await readFile(join(DIST, 'index.html'), 'utf8');
 check('Trang chủ khai báo lang="vi"', /<html[^>]+lang="vi"/.test(home));
+
+// Thẻ xác thực Google Search Console: Google yêu cầu giữ vĩnh viễn, xoá là mất quyền
+// truy cập. Phải nằm trong <head>, trước <body>, đúng như hướng dẫn của Google.
+// Đọc consts.ts dạng text: Node không import được TypeScript, mà nếu bọc try/catch thì
+// phép kiểm tra sẽ âm thầm bị bỏ qua — tệ hơn là không có nó.
+const constsSrc = await readFile(join(ROOT, 'src', 'consts.ts'), 'utf8');
+const GOOGLE_SITE_VERIFICATION = constsSrc.match(/GOOGLE_SITE_VERIFICATION\s*=\s*'([^']*)'/)?.[1] ?? null;
+check('Đọc được GOOGLE_SITE_VERIFICATION từ src/consts.ts', GOOGLE_SITE_VERIFICATION !== null);
+
+const gsvMatch = home.match(/<meta name="google-site-verification" content="([^"]+)"/);
+check('Trang chủ có thẻ xác thực Google Search Console', !!gsvMatch, 'thẻ đã bị xoá → sẽ mất quyền truy cập Search Console');
+if (gsvMatch) {
+  const headEnd = home.indexOf('</head>');
+  check('Thẻ xác thực nằm trong <head>', home.indexOf(gsvMatch[0]) < headEnd && headEnd > 0);
+  if (GOOGLE_SITE_VERIFICATION) {
+    check('Mã xác thực khớp src/consts.ts', gsvMatch[1] === GOOGLE_SITE_VERIFICATION);
+  }
+}
 check('Trang chủ có meta description', /<meta name="description"/.test(home));
 check('Trang chủ có og:image hoặc og:title', /property="og:title"/.test(home));
 

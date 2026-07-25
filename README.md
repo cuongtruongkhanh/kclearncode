@@ -100,7 +100,7 @@ Ngôn ngữ dùng được: `javascript`, `typescript`, `python`, `java`, `cshar
 | `npm run build` | Build ra thư mục `dist/` |
 | `npm run preview` | Xem thử bản đã build (giống production nhất) |
 | `npm run check` | Kiểm tra lỗi TypeScript và frontmatter sai kiểu |
-| `npm run verify` | 43 phép kiểm tra tự động (chạy **sau** `npm run build`) |
+| `npm run verify` | 47 phép kiểm tra tự động (chạy **sau** `npm run build`) |
 | `npm run backup` | Tải lại dữ liệu thô từ WordPress cũ (chỉ dùng khi site cũ còn sống) |
 | `npm run migrate` | Dựng lại `.md` từ `_backup/raw-json/` — xem cảnh báo bên dưới |
 | `npm run images` | Tải ảnh còn thiếu về local, chạy lại được nhiều lần |
@@ -221,13 +221,48 @@ phải có `.html`, còn trên Workers thì URL này 307 sang bản không đuô
 
 ### Google Search Console
 
-Vì đã bỏ tên miền `kclearncode.com`, Google phải index lại từ đầu:
+Vì đã bỏ tên miền `kclearncode.com`, Google phải index lại từ đầu.
 
-1. Vào https://search.google.com/search-console → thêm property
-   `kclearncode.khanhcuong-hanu.workers.dev`
-2. Submit sitemap: `https://kclearncode.khanhcuong-hanu.workers.dev/sitemap-index.xml`
+> ⚠️ **Phải chọn đúng loại property: "URL prefix", KHÔNG phải "Domain".**
+>
+> Domain property chỉ xác thực được bằng DNS TXT record, mà `workers.dev` là tên miền của
+> **Cloudflare** — mình không có quyền thêm record vào đó. Chọn Domain là đi vào đường cùng.
+
+**Các bước:**
+
+1. Vào https://search.google.com/search-console → **Add property**
+2. Chọn ô **URL prefix** (ô bên phải), nhập đầy đủ cả `https://`:
+   ```
+   https://kclearncode.khanhcuong-hanu.workers.dev/
+   ```
+3. Trong danh sách cách xác thực, chọn **HTML tag**. Google hiện một thẻ như:
+   ```html
+   <meta name="google-site-verification" content="MÃ_CỦA_BẠN" />
+   ```
+4. So mã đó với `GOOGLE_SITE_VERIFICATION` trong [src/consts.ts](src/consts.ts).
+   Nếu khác thì thay bằng mã mới, rồi `npm run build` và `git push`.
+5. Đợi Cloudflare deploy xong (~1 phút), kiểm tra thẻ đã lên site:
+   ```powershell
+   curl https://kclearncode.khanhcuong-hanu.workers.dev/ | Select-String google-site-verification
+   ```
+6. Quay lại Search Console bấm **Verify**
+7. Vào **Sitemaps** → submit `sitemap-index.xml`
+
+**Vì sao dùng thẻ meta mà không dùng hai cách kia:**
+
+| Cách | Dùng được? | Lý do |
+|---|---|---|
+| HTML tag | ✅ | Thẻ nằm ở `/`, host trả về 200 trực tiếp |
+| Tải file `googleXXX.html` | ❌ | Cloudflare Workers redirect 307 mọi URL `.html`, Google cần đúng đường dẫn trả 200 |
+| DNS TXT record | ❌ | `workers.dev` là tên miền của Cloudflare, không có quyền sửa DNS |
 
 Nhớ cập nhật link blog ở profile GitHub, LinkedIn, Facebook, chữ ký email.
+
+### Về SEO của `workers.dev`
+
+`workers.dev` nằm trong [Public Suffix List](https://publicsuffix.org/list/), nên Google coi
+`kclearncode.khanhcuong-hanu.workers.dev` là **một site độc lập** — không bị gộp uy tín với
+các site `workers.dev` của người khác. Không cần mua tên miền riêng chỉ vì lo SEO.
 
 ---
 
