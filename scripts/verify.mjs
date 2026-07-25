@@ -57,18 +57,25 @@ const wpPosts = allWpPosts.filter((p) => !REMOVED_WP_IDS.has(p.id));
 const mdFiles = (await readdir(POSTS)).filter((f) => f.endsWith('.md'));
 const mdSources = new Map();
 for (const f of mdFiles) mdSources.set(f, await readFile(join(POSTS, f), 'utf8'));
+
+// Bài viết mới (viết trực tiếp trên Astro, không đến từ WordPress) không có `wpId`.
+// Phải cộng thêm vào số bài mong đợi, nếu không mọi phép đếm bên dưới sẽ fail
+// mỗi lần chủ blog đăng bài mới — trong khi mục đích của chúng là canh việc *mất* bài.
+const nativePosts = [...mdSources].filter(([, src]) => !/^wpId:\s*\d+/m.test(src));
+const expectedPosts = wpPosts.length + nativePosts.length;
 const distFiles = await walk(DIST);
 const htmlFiles = distFiles.filter((f) => f.endsWith('.html'));
 
 // ------------------------------------------------------- 1. Đủ số bài
 console.log('\n[1] Số lượng bài viết');
 console.log(
-  `      (WordPress có ${allWpPosts.length} bài, đã chủ ý xoá ${REMOVED_POSTS.length} → còn ${wpPosts.length})`,
+  `      (WordPress có ${allWpPosts.length} bài, đã chủ ý xoá ${REMOVED_POSTS.length} → còn ${wpPosts.length}` +
+    `, cộng ${nativePosts.length} bài viết mới → cần ${expectedPosts})`,
 );
 check(
-  `Số file .md khớp số bài cần có (${wpPosts.length})`,
-  mdFiles.length === wpPosts.length,
-  `có ${mdFiles.length} file .md, cần ${wpPosts.length} bài`,
+  `Số file .md khớp số bài cần có (${expectedPosts})`,
+  mdFiles.length === expectedPosts,
+  `có ${mdFiles.length} file .md, cần ${expectedPosts} bài`,
 );
 
 // Bài đã xoá thì phải xoá thật, không được sót lại
@@ -84,8 +91,8 @@ check(
 
 const postPages = htmlFiles.filter((f) => f.includes(`${join('dist', 'posts')}`) || /dist[\\/]posts[\\/]/.test(f));
 check(
-  `Số trang bài đã build khớp (${wpPosts.length})`,
-  postPages.length === wpPosts.length,
+  `Số trang bài đã build khớp (${expectedPosts})`,
+  postPages.length === expectedPosts,
   `build ra ${postPages.length} trang trong dist/posts/`,
 );
 
@@ -206,13 +213,26 @@ for (const p of ['index.html', 'blog/index.html', 'categories/index.html', '404.
 
 const rss = await readFile(join(DIST, 'rss.xml'), 'utf8');
 const rssItems = (rss.match(/<item>/g) ?? []).length;
-check(`RSS có đủ ${wpPosts.length} bài`, rssItems === wpPosts.length, `đếm được ${rssItems} item`);
+check(`RSS có đủ ${expectedPosts} bài`, rssItems === expectedPosts, `đếm được ${rssItems} item`);
 check('RSS khai báo tiếng Việt', rss.includes('<language>vi-VN</language>'));
 
 // Category: số bài mỗi category phải khớp dữ liệu WordPress
 const wpCats = JSON.parse(await readFile(join(RAW, 'categories.json'), 'utf8'));
 const catPages = distFiles.filter((f) => /dist[\\/]categories[\\/][^\\/]+[\\/]index\.html$/.test(f));
-const expectedCats = wpCats.filter((c) => c.slug !== 'uncategorized' && c.count > 0).length;
+const wpCatNames = new Set(wpCats.map((c) => c.name.toLowerCase()));
+// Category do bài viết mới sinh ra (vd "AI") không có trong dữ liệu WordPress,
+// nên phải đếm thêm — nếu không thì mỗi lần thêm chủ đề mới là phép này fail.
+const nativeCatNames = new Set();
+for (const [, src] of nativePosts) {
+  const m = src.match(/^categories:\s*\[(.*)\]/m);
+  if (!m) continue;
+  for (const raw of m[1].split(',')) {
+    const name = raw.trim().replace(/^["']|["']$/g, '').toLowerCase();
+    if (name && !wpCatNames.has(name)) nativeCatNames.add(name);
+  }
+}
+const expectedCats =
+  wpCats.filter((c) => c.slug !== 'uncategorized' && c.count > 0).length + nativeCatNames.size;
 check(
   `Số trang category khớp (${expectedCats} category ngoài "uncategorized")`,
   catPages.length === expectedCats,
