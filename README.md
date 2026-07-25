@@ -241,10 +241,14 @@ Vì đã bỏ tên miền `kclearncode.com`, Google phải index lại từ đ�
    ```
 4. So mã đó với `GOOGLE_SITE_VERIFICATION` trong [src/consts.ts](src/consts.ts).
    Nếu khác thì thay bằng mã mới, rồi `npm run build` và `git push`.
-5. Đợi Cloudflare deploy xong (~1 phút), kiểm tra thẻ đã lên site:
+5. Đợi Cloudflare deploy xong (~1 phút), kiểm tra thẻ đã lên site. Chạy trong terminal
+   VS Code (`` Ctrl + ` ``):
    ```powershell
-   curl https://kclearncode.khanhcuong-hanu.workers.dev/ | Select-String google-site-verification
+   (Invoke-WebRequest https://kclearncode.khanhcuong-hanu.workers.dev/ -UseBasicParsing).Content | Select-String google-site-verification
    ```
+   > Đừng viết `curl ... | Select-String`: trong PowerShell, `curl` là **alias của
+   > `Invoke-WebRequest`** nên nó trả về một object chứ không phải HTML, và lệnh sẽ lỗi.
+   > Muốn dùng curl thật thì gõ `curl.exe -s <url> | Select-String google-site-verification`.
 6. Quay lại Search Console bấm **Verify**
 7. Vào **Sitemaps** → submit `sitemap-index.xml`
 
