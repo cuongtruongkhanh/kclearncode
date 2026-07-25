@@ -2,7 +2,7 @@
 
 **🌐 https://kclearncode.khanhcuong-hanu.workers.dev**
 
-Blog cá nhân, chạy bằng [Astro](https://astro.build). Toàn bộ 30 bài viết đã chuyển từ
+Blog cá nhân, chạy bằng [Astro](https://astro.build). Toàn bộ bài viết đã chuyển từ
 WordPress (`kclearncode.com`) sang đây. Hosting miễn phí trên Cloudflare Workers — **chi phí 0đ**.
 
 | | |
@@ -100,13 +100,21 @@ Ngôn ngữ dùng được: `javascript`, `typescript`, `python`, `java`, `cshar
 | `npm run build` | Build ra thư mục `dist/` |
 | `npm run preview` | Xem thử bản đã build (giống production nhất) |
 | `npm run check` | Kiểm tra lỗi TypeScript và frontmatter sai kiểu |
-| `npm run verify` | 46 phép kiểm tra tự động (chạy **sau** `npm run build`) |
+| `npm run verify` | 43 phép kiểm tra tự động (chạy **sau** `npm run build`) |
 | `npm run backup` | Tải lại dữ liệu thô từ WordPress cũ (chỉ dùng khi site cũ còn sống) |
-| `npm run migrate` | Dựng lại toàn bộ `.md` từ `_backup/raw-json/` — **ghi đè hết bài đã sửa tay** |
+| `npm run migrate` | Dựng lại `.md` từ `_backup/raw-json/` — xem cảnh báo bên dưới |
 | `npm run images` | Tải ảnh còn thiếu về local, chạy lại được nhiều lần |
 
-> ⚠️ `npm run migrate` **xoá sạch `src/content/posts/` rồi tạo lại**. Sau khi đã bắt đầu
-> viết bài mới hoặc sửa tay bài cũ thì **đừng chạy lệnh này nữa**.
+> ⚠️ **`npm run migrate` xoá sạch `src/content/posts/` rồi tạo lại.** Sau khi đã bắt đầu
+> viết bài mới thì gần như không cần chạy nữa. Nếu buộc phải chạy:
+>
+> - Bài **viết mới** (không có trong backup WordPress) sẽ **bị xoá mất**.
+> - Bài **sửa tay** sẽ bị ghi đè, **trừ khi** slug của nó nằm trong `PROTECTED_SLUGS`
+>   ở [scripts/removed-posts.mjs](scripts/removed-posts.mjs).
+> - Đường dẫn ảnh quay về URL WordPress cũ → phải chạy `npm run images` ngay sau đó.
+>
+> Muốn sửa tay một bài cũ và giữ được sửa đổi qua các lần migrate thì thêm slug của nó
+> vào `PROTECTED_SLUGS`.
 
 ---
 
@@ -114,7 +122,7 @@ Ngôn ngữ dùng được: `javascript`, `typescript`, `python`, `java`, `cshar
 
 ```
 src/
-  content/posts/       30 bài viết dạng Markdown
+  content/posts/       28 bài viết dạng Markdown
   content.config.ts    Schema frontmatter (sai kiểu là build fail ngay)
   consts.ts            Tên site, menu, hàm slug hoá & format ngày
   ../astro.config.mjs  ⚠️ Domain của site (`site:`) — sinh canonical/sitemap/RSS
@@ -123,27 +131,38 @@ src/
   pages/               Các route: /, /blog, /posts/…, /categories/…, /rss.xml, /404
   styles/global.css    Toàn bộ CSS (dark/light bằng CSS variables)
 public/
-  images/posts/        66 ảnh đã tải về từ WordPress
-  games/               2 web app tương tác tách riêng (xem mục dưới)
+  images/posts/        62 ảnh đã tải về từ WordPress
+  games/               1 web app tương tác tách riêng (xem mục dưới)
 scripts/               Script migrate & kiểm tra
 _backup/raw-json/      Dữ liệu gốc từ WordPress REST API — bản lưu, đừng xoá
 ```
 
 ---
 
-## Hai điểm đặc biệt cần biết
+## Ba điểm đặc biệt cần biết
 
-### 1. Hai bài game nằm trong iframe
+### 1. Bài game nằm trong iframe
 
-`guess-my-number` và `the-pig-game` không phải bài viết thường — chúng là web app JS
-có CSS reset toàn cục (`* { margin: 0 }`, `html { font-size: 62.5% }`, `body { background: #222 }`).
-Nhúng thẳng vào bài sẽ phá layout blog, nên mỗi game là một trang HTML độc lập trong
-`public/games/` và được nhúng lại bằng `<iframe>`.
+`guess-my-number` không phải bài viết thường — nó là một web app JS có CSS reset toàn cục
+(`* { margin: 0 }`, `html { font-size: 62.5% }`, `body { background: #222 }`). Nhúng thẳng vào
+bài sẽ phá layout blog, nên game là một trang HTML độc lập trong `public/games/` và được
+nhúng lại bằng `<iframe>` — iframe chính là ranh giới cách ly CSS.
 
-Iframe tự báo chiều cao thật ra trang cha qua `postMessage`, xử lý ở `src/layouts/PostLayout.astro`.
+Iframe tự báo chiều cao thật ra trang cha qua `postMessage`, xử lý ở
+[src/layouts/PostLayout.astro](src/layouts/PostLayout.astro).
 Muốn sửa game thì sửa trực tiếp file trong `public/games/`.
 
-### 2. Năm ảnh đã mất vĩnh viễn
+### 2. Hai bài đã xoá khỏi blog
+
+`the-pig-game` và `http-status-code` đã bỏ theo yêu cầu, nhưng **vẫn còn trong
+`_backup/raw-json/`** (bản lưu WordPress không bị sửa). Chúng được liệt kê ở
+`REMOVED_POSTS` trong [scripts/removed-posts.mjs](scripts/removed-posts.mjs) để
+`npm run migrate` không tạo lại và `npm run verify` không báo lỗi sai.
+
+Muốn phục hồi thì xoá mục tương ứng khỏi `REMOVED_POSTS` rồi chạy
+`npm run migrate && npm run images`.
+
+### 3. Năm ảnh đã mất vĩnh viễn
 
 Bài `python-tu-khong-den-co` có 5 ảnh minh hoạ host ở `cuccode.com`. Trang đó đã xoá ảnh
 (HTTP 404) và Wayback Machine cũng không có bản lưu — **mất từ trước khi migrate**, không phải
@@ -197,7 +216,7 @@ Cloudflare Workers redirect 307 mọi URL thiếu dấu `/` (ví dụ `/blog` �
 tự bỏ đuôi `.html`. Vì vậy dự án đặt `trailingSlash: 'always'` và **mọi link nội bộ đều
 có dấu `/` ở cuối** — nếu viết thiếu, mỗi lần bấm sẽ tốn thêm một vòng request.
 
-Riêng iframe của 2 bài game vẫn trỏ `/games/<ten>.html` (có đuôi): bản local bắt buộc
+Riêng iframe của bài game vẫn trỏ `/games/<ten>.html` (có đuôi): bản local bắt buộc
 phải có `.html`, còn trên Workers thì URL này 307 sang bản không đuôi. Chạy đúng ở cả hai nơi.
 
 ### Google Search Console

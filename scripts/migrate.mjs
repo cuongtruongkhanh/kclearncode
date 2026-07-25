@@ -9,10 +9,11 @@
  *  - Emoji Facebook được chèn dưới dạng <img src=".../1f602.png"> — tên file là
  *    codepoint Unicode, nên khôi phục được thành emoji thật.
  */
-import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { JSDOM } from 'jsdom';
 import TurndownService from 'turndown';
+import { REMOVED_WP_IDS, REMOVED_POSTS, PROTECTED_SLUGS } from './removed-posts.mjs';
 
 const ROOT = process.cwd();
 const RAW = join(ROOT, '_backup', 'raw-json');
@@ -339,7 +340,18 @@ function makeDescription(post, bodyMd, title) {
 
 // ------------------------------------------------------------------ main
 
-const posts = JSON.parse(await readFile(join(RAW, 'posts.json'), 'utf8'));
+const allPosts = JSON.parse(await readFile(join(RAW, 'posts.json'), 'utf8'));
+const posts = allPosts.filter((p) => !REMOVED_WP_IDS.has(p.id));
+
+// Giữ lại nội dung các bài đã sửa tay TRƯỚC khi xoá thư mục, rồi ghi trả lại sau.
+// Không làm bước này thì mỗi lần migrate là mất hết công viết lại.
+const preserved = new Map();
+for (const slug of PROTECTED_SLUGS) {
+  const existing = (await readdir(OUT).catch(() => [])).find(
+    (f) => f.endsWith('.md') && f.replace(/\.md$/, '').replace(/^\d{4}-\d{2}-/, '') === slug,
+  );
+  if (existing) preserved.set(existing, await readFile(join(OUT, existing), 'utf8'));
+}
 
 await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
@@ -431,9 +443,23 @@ for (const post of posts) {
   report.push({ filename, title, codeBlocks, images: images.length, external, leftoverHtml, warnings, hasGame: !!app });
 }
 
+// Ghi trả bài đã sửa tay, đè lên bản vừa sinh từ WordPress
+for (const [filename, content] of preserved) {
+  await writeFile(join(OUT, filename), content, 'utf8');
+}
+
 // ------------------------------------------------------------- báo cáo
 
-console.log(`Đã ghi ${report.length} file vào src/content/posts/\n`);
+console.log(`Đã ghi ${report.length} file vào src/content/posts/`);
+if (preserved.size) {
+  console.log(`Giữ nguyên ${preserved.size} bài đã sửa tay (không ghi đè):`);
+  for (const f of preserved.keys()) console.log(`  - ${f}`);
+}
+if (REMOVED_POSTS.length) {
+  console.log(`Bỏ qua ${REMOVED_POSTS.length} bài đã chủ ý xoá (xem scripts/removed-posts.mjs):`);
+  for (const r of REMOVED_POSTS) console.log(`  - ${r.slug} — ${r.reason}`);
+}
+console.log('');
 console.log('FILE'.padEnd(58), 'CODE', ' IMG', ' GAME');
 for (const r of report) {
   console.log(r.filename.padEnd(58), String(r.codeBlocks).padStart(4), String(r.images).padStart(4), r.hasGame ? '  ✓' : '');

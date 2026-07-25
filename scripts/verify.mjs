@@ -48,7 +48,12 @@ if (!existsSync(DIST)) {
 const { default: astroConfig } = await import('../astro.config.mjs');
 const SITE_URL = astroConfig.site.replace(/\/+$/, '');
 
-const wpPosts = JSON.parse(await readFile(join(RAW, 'posts.json'), 'utf8'));
+// Trừ ra các bài đã chủ ý xoá, để phép kiểm tra "không mất bài nào" vẫn có ý nghĩa:
+// nó phải fail khi bài biến mất do lỗi migrate, chứ không fail vì chủ blog cố tình bỏ bài.
+const { REMOVED_WP_IDS, REMOVED_POSTS } = await import('./removed-posts.mjs');
+const allWpPosts = JSON.parse(await readFile(join(RAW, 'posts.json'), 'utf8'));
+const wpPosts = allWpPosts.filter((p) => !REMOVED_WP_IDS.has(p.id));
+
 const mdFiles = (await readdir(POSTS)).filter((f) => f.endsWith('.md'));
 const mdSources = new Map();
 for (const f of mdFiles) mdSources.set(f, await readFile(join(POSTS, f), 'utf8'));
@@ -57,10 +62,24 @@ const htmlFiles = distFiles.filter((f) => f.endsWith('.html'));
 
 // ------------------------------------------------------- 1. Đủ số bài
 console.log('\n[1] Số lượng bài viết');
+console.log(
+  `      (WordPress có ${allWpPosts.length} bài, đã chủ ý xoá ${REMOVED_POSTS.length} → còn ${wpPosts.length})`,
+);
 check(
-  `Số file .md khớp số bài trên WordPress (${wpPosts.length})`,
+  `Số file .md khớp số bài cần có (${wpPosts.length})`,
   mdFiles.length === wpPosts.length,
-  `có ${mdFiles.length} file .md, WordPress có ${wpPosts.length} bài`,
+  `có ${mdFiles.length} file .md, cần ${wpPosts.length} bài`,
+);
+
+// Bài đã xoá thì phải xoá thật, không được sót lại
+const resurrected = [...mdSources].filter(([, src]) => {
+  const m = src.match(/^wpId:\s*(\d+)/m);
+  return m && REMOVED_WP_IDS.has(Number(m[1]));
+});
+check(
+  'Bài đã chủ ý xoá không bị tạo lại',
+  resurrected.length === 0,
+  resurrected.map(([f]) => f).join(', '),
 );
 
 const postPages = htmlFiles.filter((f) => f.includes(`${join('dist', 'posts')}`) || /dist[\\/]posts[\\/]/.test(f));
@@ -83,6 +102,13 @@ check('Không bài nào bị bỏ sót (đối chiếu theo wpId)', missing.leng
 // ------------------------------------------------------- 2. Không sót rác WordPress
 console.log('\n[2] Không còn dấu vết WordPress trong nội dung');
 
+// Chỉ soi phần VĂN XUÔI: bỏ nội dung trong code fence và inline code, vì bài viết có thể
+// cố ý chứa ví dụ HTML (`<div class="row">`) — đó là nội dung, không phải rác WordPress.
+// Riêng <span> màu của Shiki lọt vào code fence đã có phép kiểm tra riêng ở mục [4].
+const mdProse = new Map(
+  [...mdSources].map(([f, src]) => [f, src.replace(/^```[\s\S]*?^```$/gm, '').replace(/`[^`\n]*`/g, '')]),
+);
+
 const banned = [
   ['class WordPress (wp-block-)', /wp-block-/],
   ['đường dẫn wp-content', /kclearncode\.com\/wp-content/],
@@ -91,7 +117,7 @@ const banned = [
   ['shortcode WordPress', /\[caption|\[gallery|\[embed/],
 ];
 for (const [label, re] of banned) {
-  const hits = [...mdSources].filter(([, src]) => re.test(src)).map(([f]) => f);
+  const hits = [...mdProse].filter(([, prose]) => re.test(prose)).map(([f]) => f);
   check(`Không còn ${label}`, hits.length === 0, hits.join(', '));
 }
 
@@ -196,7 +222,15 @@ check(
 // ------------------------------------------------------- 6. Game tương tác
 console.log('\n[6] Web app tương tác đã tách ra iframe');
 
-for (const slug of ['guess-my-number', 'the-pig-game']) {
+// Suy ra danh sách game từ bài viết thật, không viết cứng — thêm/bớt bài game
+// là phép kiểm tra tự theo, không phải sửa file này.
+const gameSlugs = [...mdSources]
+  .filter(([, src]) => /<iframe data-kc-game/.test(src))
+  .map(([f]) => f.replace(/\.md$/, '').replace(/^\d{4}-\d{2}-/, ''));
+
+console.log(`      (${gameSlugs.length} bài có nhúng game: ${gameSlugs.join(', ') || 'không có'})`);
+
+for (const slug of gameSlugs) {
   const gamePage = join(DIST, 'games', `${slug}.html`);
   check(`Có dist/games/${slug}.html`, existsSync(gamePage));
   if (existsSync(gamePage)) {
@@ -206,11 +240,15 @@ for (const slug of ['guess-my-number', 'the-pig-game']) {
     check(`  ${slug}: có cơ chế tự báo chiều cao`, html.includes('kcGameHeight'));
   }
   const postPage = join(DIST, 'posts', slug, 'index.html');
-  if (existsSync(postPage)) {
-    const html = await readFile(postPage, 'utf8');
-    check(`  ${slug}: bài viết có nhúng iframe game`, html.includes(`/games/${slug}.html`));
-  }
+  check(`  ${slug}: bài viết có nhúng iframe game`, existsSync(postPage) && (await readFile(postPage, 'utf8')).includes(`/games/${slug}.html`));
 }
+
+// Không còn file game mồ côi (bài đã xoá nhưng file game vẫn nằm lại)
+const gameFilesOnDisk = (await readdir(join(ROOT, 'public', 'games')).catch(() => []))
+  .filter((f) => f.endsWith('.html'))
+  .map((f) => f.replace(/\.html$/, ''));
+const orphanGames = gameFilesOnDisk.filter((g) => !gameSlugs.includes(g));
+check('Không có file game mồ côi trong public/games/', orphanGames.length === 0, orphanGames.join(', '));
 
 // ------------------------------------------------------- 7. Tiếng Việt & SEO
 console.log('\n[7] Tiếng Việt và SEO');
